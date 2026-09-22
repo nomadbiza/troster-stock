@@ -583,16 +583,18 @@ const STOCK_FINANCIAL_PROFILES = {
     market: "KR",
     sector: "semiconductor",
     shares_outstanding_mil: 728.0,   // 7억 2,800만 주
-    base_revenue: 53000,             // 53조 원
+    base_revenue: 97146.7,           // 97.1조 원
     growth_rate_next_5y: 14.0,
-    target_ebit_margin: 32.0,
+    target_ebit_margin: 48.6,
     sales_to_capital: 1.4,
-    unlevered_beta: 1.15,
-    debt_to_equity_pct: 25.0,
+    unlevered_beta: 1.20,
+    debt_to_equity_pct: 46.0,
     net_debt_billion_krw: 10000,
-    rd_annual_billion_krw: 4000,
-    curr_price: 186700,
-    buy_price: 152600
+    rd_annual_billion_krw: 4500,
+    curr_price: 1868000,
+    buy_price: 1730000,
+    consensus_target_price: "₩3,305,000",
+    consensus_opinion: "매수 (Buy)"
   },
   "005930": {
     name: "삼성전자",
@@ -600,16 +602,18 @@ const STOCK_FINANCIAL_PROFILES = {
     market: "KR",
     sector: "semiconductor",
     shares_outstanding_mil: 5969.0,  // 59억 6,900만 주
-    base_revenue: 265000,            // 265조 원
+    base_revenue: 333605.9,          // 333.6조 원 (2026 연결 공시)
     growth_rate_next_5y: 9.5,
-    target_ebit_margin: 18.5,
+    target_ebit_margin: 24.0,
     sales_to_capital: 1.3,
-    unlevered_beta: 1.05,
-    debt_to_equity_pct: 10.0,
+    unlevered_beta: 1.15,
+    debt_to_equity_pct: 29.9,
     net_debt_billion_krw: -40000,    // 순현금 40조
-    rd_annual_billion_krw: 10000,
-    curr_price: 78500,
-    buy_price: 72000
+    rd_annual_billion_krw: 12000,
+    curr_price: 279750,
+    buy_price: 198177,
+    consensus_target_price: "₩487,000",
+    consensus_opinion: "매수 (Buy)"
   },
   "005380": {
     name: "현대차",
@@ -626,7 +630,9 @@ const STOCK_FINANCIAL_PROFILES = {
     net_debt_billion_krw: 15000,
     rd_annual_billion_krw: 3500,
     curr_price: 248500,
-    buy_price: 235000
+    buy_price: 235000,
+    consensus_target_price: "₩320,000",
+    consensus_opinion: "매수 (Buy)"
   },
   "035420": {
     name: "NAVER",
@@ -643,7 +649,9 @@ const STOCK_FINANCIAL_PROFILES = {
     net_debt_billion_krw: -2000,
     rd_annual_billion_krw: 1800,
     curr_price: 197600,
-    buy_price: 185000
+    buy_price: 185000,
+    consensus_target_price: "₩260,000",
+    consensus_opinion: "매수 (Buy)"
   },
   "035720": {
     name: "카카오",
@@ -660,7 +668,9 @@ const STOCK_FINANCIAL_PROFILES = {
     net_debt_billion_krw: 1000,
     rd_annual_billion_krw: 800,
     curr_price: 38500,
-    buy_price: 42000
+    buy_price: 42000,
+    consensus_target_price: "₩55,000",
+    consensus_opinion: "중립 / 보유 (Hold)"
   },
   "068270": {
     name: "셀트리온",
@@ -677,7 +687,9 @@ const STOCK_FINANCIAL_PROFILES = {
     net_debt_billion_krw: 500,
     rd_annual_billion_krw: 400,
     curr_price: 192000,
-    buy_price: 180000
+    buy_price: 180000,
+    consensus_target_price: "₩260,000",
+    consensus_opinion: "매수 (Buy)"
   },
   "196170": {
     name: "알테오젠",
@@ -907,6 +919,25 @@ const STOCK_FINANCIAL_PROFILES = {
     consensus_target_price: "₩260,000",
     consensus_opinion: "매수 (Buy)"
   },
+  "267260": {
+    name: "HD현대일렉트릭",
+    ticker: "267260",
+    market: "KR",
+    sector: "industrial_defense",
+    shares_outstanding_mil: 36.0,
+    base_revenue: 3300,
+    growth_rate_next_5y: 18.0,
+    target_ebit_margin: 18.5,
+    sales_to_capital: 1.5,
+    unlevered_beta: 1.15,
+    debt_to_equity_pct: 25.0,
+    net_debt_billion_krw: -200,
+    rd_annual_billion_krw: 100,
+    curr_price: 680000,
+    buy_price: 590000,
+    consensus_target_price: "₩850,000",
+    consensus_opinion: "매수 (Buy)"
+  },
   "NVDA": {
     name: "NVIDIA",
     ticker: "NVDA",
@@ -922,7 +953,9 @@ const STOCK_FINANCIAL_PROFILES = {
     net_debt_billion_krw: -15000,
     rd_annual_billion_krw: 8000,
     curr_price: 142.8,
-    buy_price: 120.0
+    buy_price: 120.0,
+    consensus_target_price: "$175.00",
+    consensus_opinion: "적극 매수 (Strong Buy)"
   },
   "AAPL": {
     name: "Apple",
@@ -939,7 +972,9 @@ const STOCK_FINANCIAL_PROFILES = {
     net_debt_billion_krw: 50000,
     rd_annual_billion_krw: 30000,
     curr_price: 228.4,
-    buy_price: 215.0
+    buy_price: 215.0,
+    consensus_target_price: "$260.00",
+    consensus_opinion: "매수 (Moderate Buy)"
   },
   "TSLA": {
     name: "Tesla",
@@ -956,7 +991,9 @@ const STOCK_FINANCIAL_PROFILES = {
     net_debt_billion_krw: -15000,
     rd_annual_billion_krw: 4000,
     curr_price: 243.5,
-    buy_price: 220.0
+    buy_price: 220.0,
+    consensus_target_price: "$300.00",
+    consensus_opinion: "보유 / 매수 (Hold/Buy)"
   }
 };
 
@@ -2444,8 +2481,18 @@ function renderSelectedStockHero() {
   
   const gapPct = exit.valuation_gap_pct || 0;
   const gapEl = document.getElementById("val-base-gap");
-  gapEl.innerText = `현재가 대비 괴리율: ${gapPct >= 0 ? '+' : ''}${gapPct}%`;
-  gapEl.className = gapPct > 10 ? "font-bold text-amber-400" : (gapPct < -10 ? "font-bold text-emerald-400" : "font-bold text-slate-300");
+  if (gapEl) {
+    if (gapPct < -0.1) {
+      gapEl.innerText = `적정가 대비: ${Math.abs(gapPct).toFixed(1)}% 저평가 (안심 매수/홀딩)`;
+      gapEl.className = "font-bold text-emerald-400";
+    } else if (gapPct > 0.1) {
+      gapEl.innerText = `적정가 대비: +${gapPct.toFixed(1)}% 고평가 (익절 관망)`;
+      gapEl.className = "font-bold text-amber-400";
+    } else {
+      gapEl.innerText = `적정가 부합 (괴리율 0%)`;
+      gapEl.className = "font-bold text-slate-300";
+    }
+  }
 
   document.getElementById("tech-rsi").innerText = tech.rsi_14 || 50;
   document.getElementById("tech-rsi-status").innerText = tech.overbought_level || "중립";
