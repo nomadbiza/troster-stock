@@ -1986,8 +1986,13 @@ function renderYieldCurveChart() {
 // Local-First Zero-Knowledge Portfolio Management (100% Client Privacy)
 // =============================================================================
 async function fetchPortfolio(rf = null, forceRefresh = false) {
+  // 보안 조치: 이전 v2에 저장되어 있던 모든 개인 주식 데이터 강제 파기
+  if (localStorage.getItem("troster_portfolio_v2")) {
+    localStorage.removeItem("troster_portfolio_v2");
+  }
+
   // 1. 사용자 브라우저 로컬 저장소(localStorage)에서 개인 종목 읽기
-  let stored = localStorage.getItem("troster_portfolio_v2");
+  let stored = localStorage.getItem("troster_portfolio_v3");
   let rawList = null;
 
   if (stored) {
@@ -1998,18 +2003,10 @@ async function fetchPortfolio(rf = null, forceRefresh = false) {
     }
   }
 
-  // 2. 신규 접속 사용자일 경우 초기 샘플(삼성/하이닉스) 템플릿 로드 후 개인 브라우저에만 저장
+  // 2. 신규 접속 사용자: 개인 금융 정보 완벽 격리를 위해 100% 빈 포트폴리오(Clean Slate)로 시작
   if (!rawList) {
-    try {
-      const res = await fetch("/api/portfolio");
-      if (res.ok) {
-        const data = await res.json();
-        rawList = data.portfolio || [];
-        localStorage.setItem("troster_portfolio_v2", JSON.stringify(rawList));
-      }
-    } catch (e) {
-      rawList = [];
-    }
+    rawList = [];
+    localStorage.setItem("troster_portfolio_v3", JSON.stringify(rawList));
   }
 
   rawList = rawList || [];
@@ -2037,7 +2034,7 @@ async function fetchPortfolio(rf = null, forceRefresh = false) {
             }
           }
         });
-        localStorage.setItem("troster_portfolio_v2", JSON.stringify(rawList));
+        localStorage.setItem("troster_portfolio_v3", JSON.stringify(rawList));
       }
     } catch (err) {
       console.log("Live quote sync note:", err);
@@ -4079,10 +4076,10 @@ async function handleSaveStock(e) {
   };
 
   // 100% 개인 브라우저 로컬 저장 (개인 금융정보 서버 전송 원천 차단)
-  const stored = localStorage.getItem("troster_portfolio_v2");
+  const stored = localStorage.getItem("troster_portfolio_v3");
   const list = stored ? JSON.parse(stored) : [];
   list.push(payload);
-  localStorage.setItem("troster_portfolio_v2", JSON.stringify(list));
+  localStorage.setItem("troster_portfolio_v3", JSON.stringify(list));
 
   closeAddStockModal();
   await fetchPortfolio(null, true);
@@ -4092,10 +4089,10 @@ async function handleSaveStock(e) {
 async function deleteStock(stockId) {
   if (!confirm("정말 이 종목을 포트폴리오에서 삭제하시겠습니까?")) return;
 
-  const stored = localStorage.getItem("troster_portfolio_v2");
+  const stored = localStorage.getItem("troster_portfolio_v3");
   let list = stored ? JSON.parse(stored) : [];
   list = list.filter(s => s.id !== stockId);
-  localStorage.setItem("troster_portfolio_v2", JSON.stringify(list));
+  localStorage.setItem("troster_portfolio_v3", JSON.stringify(list));
 
   if (g_selectedStock && g_selectedStock.id === stockId) {
     g_selectedStock = null;
@@ -4106,26 +4103,14 @@ async function deleteStock(stockId) {
 async function clearAllPortfolio() {
   if (!confirm("포트폴리오의 모든 종목을 비우시겠습니까? 새롭게 직접 입력하실 수 있습니다.")) return;
 
-  localStorage.setItem("troster_portfolio_v2", JSON.stringify([]));
+  localStorage.setItem("troster_portfolio_v3", JSON.stringify([]));
   g_portfolio = [];
   g_selectedStock = null;
   await fetchPortfolio();
 }
 
 async function loadSamplePortfolio() {
-  if (!confirm("샘플 대표 종목(삼성전자, SK하이닉스) 예시를 불러오시겠습니까?")) return;
-
-  try {
-    const res = await fetch("/api/portfolio");
-    if (res.ok) {
-      const data = await res.json();
-      localStorage.setItem("troster_portfolio_v2", JSON.stringify(data.portfolio || []));
-      await fetchPortfolio(null, true);
-      return;
-    }
-  } catch (e) {
-    // fallback
-  }
+  if (!confirm("샘플 종목(삼성전자, SK하이닉스, NVIDIA 가상 예시)을 불러오시겠습니까?")) return;
 
   const sampleList = [
     {
