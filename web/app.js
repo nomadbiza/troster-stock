@@ -1117,12 +1117,26 @@ function jsCalculateDamodaranDcf(stock, rfOverride = null) {
     baseFairVal = market === "US" ? base : Math.round(base / 100) * 100;
     conservativeVal = Math.round(baseFairVal * 0.80);
     bullishVal = Math.round(Math.max(baseFairVal * 1.25, consensusTpNum * 1.15));
+  } else if (consensusTpNum > 0 && sectorId === "semiconductor") {
+    // 반도체 슈퍼사이클 특화: 순수 역사적 DCF의 저평가 왜곡을 보정하여 시장 Forward PER / 증권사 컨센서스(65%) + DCF(35%) 하이브리드 결합
+    const hybrid = (rawFairVal * 0.35) + (consensusTpNum * 0.65);
+    const base = Math.max(hybrid, consensusTpNum * 0.75);
+    baseFairVal = market === "US" ? base : Math.round(base / 100) * 100;
+    conservativeVal = Math.round(baseFairVal * 0.82);
+    bullishVal = Math.round(Math.max(baseFairVal * 1.25, consensusTpNum * 1.05));
   } else if (consensusTpNum > 0 && sectorId === "software_ai") {
     const hybrid = (rawFairVal * 0.60) + (consensusTpNum * 0.40);
     const base = Math.max(hybrid, Math.min(rawFairVal, consensusTpNum) * 0.95);
     baseFairVal = market === "US" ? base : Math.round(base / 100) * 100;
     conservativeVal = Math.round(baseFairVal * 0.82);
     bullishVal = Math.round(baseFairVal * 1.28);
+  } else if (consensusTpNum > 0) {
+    // 기타 주요 섹터: 다모다란 DCF 45% + 시장 컨센서스 55% 하이브리드 앙상블
+    const hybrid = (rawFairVal * 0.45) + (consensusTpNum * 0.55);
+    const base = Math.max(hybrid, consensusTpNum * 0.70);
+    baseFairVal = market === "US" ? Math.round(base * 10) / 10 : Math.round(base / 100) * 100;
+    conservativeVal = Math.round(baseFairVal * 0.80);
+    bullishVal = Math.round(Math.max(baseFairVal * 1.25, consensusTpNum * 1.05));
   } else {
     baseFairVal = market === "US" ? Math.round(rawFairVal * 10) / 10 : Math.round(rawFairVal / 100) * 100;
     conservativeVal = Math.round(baseFairVal * 0.80);
