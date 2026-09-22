@@ -1,0 +1,88 @@
+{
+  "portfolio": [
+    {
+      "id": "stock_20260921160700",
+      "ticker": "005930",
+      "name": "삼성전자",
+      "market": "KR",
+      "currency": "KRW",
+      "sector_id": "semiconductor",
+      "buy_price": 198176.88,
+      "quantity": 104,
+      "buy_date": "2026-09-21",
+      "current_price": 280250.0,
+      "day_change": 6250.0,
+      "day_change_pct": 2.28,
+      "high_52w": 327600.0,
+      "low_52w": 218400.0,
+      "notes": "HBM3E 공급 본격화 및 메모리 판가 인상 사이클",
+      "consensus_target_price": "₩487,045",
+      "damodaran_inputs": {
+        "base_revenue": 333605.9,
+        "growth_rate_next_5y": 9.5,
+        "terminal_growth_rate": 2.5,
+        "target_ebit_margin": 24.0,
+        "sales_to_capital": 1.3,
+        "unlevered_beta": 1.2,
+        "debt_to_equity_pct": 29.9,
+        "effective_tax_rate": 22.0,
+        "cost_of_debt_pretax": 4.5,
+        "shares_outstanding_mil": 5969.0,
+        "net_debt_billion_krw": -40000.0,
+        "rd_annual_billion_krw": 12000.0
+      },
+      "technical_indicators": {
+        "rsi_14": 59.9,
+        "bollinger_upper": 278585.9,
+        "bollinger_middle": 261150.0,
+        "bollinger_lower": 243714.1,
+        "sma_20": 261150.0,
+        "sma_60": 262808.3,
+        "trend": "상승세 (20일선 위)",
+        "overbought_level": "중립 구간"
+      }
+    },
+    {
+      "id": "stock_20260922091112",
+      "ticker": "000660",
+      "name": "SK하이닉스",
+      "market": "KR",
+      "currency": "KRW",
+      "sector_id": "semiconductor",
+      "consensus_target_price": "₩3,305,652",
+      "buy_price": 1526172.44,
+      "quantity": 27,
+      "buy_date": "2026-09-22",
+      "current_price": 1923000.0,
+      "day_change": 55000.0,
+      "day_change_pct": 2.94,
+      "high_52w": 2313600.0,
+      "low_52w": 1542400.0,
+      "notes": "HBM 독점적 공급. 적정가 도달에 따른 단계적 분할 익절",
+      "damodaran_inputs": {
+        "base_revenue": 53000.0,
+        "growth_rate_next_5y": 14.0,
+        "terminal_growth_rate": 2.5,
+        "target_ebit_margin": 48.6,
+        "sales_to_capital": 1.4,
+        "unlevered_beta": 1.15,
+        "debt_to_equity_pct": 25.0,
+        "effective_tax_rate": 22.0,
+        "cost_of_debt_pretax": 4.5,
+        "shares_outstanding_mil": 728.0,
+        "net_debt_billion_krw": 10000.0,
+        "rd_annual_billion_krw": 4000.0
+      },
+      "technical_indicators": {
+        "rsi_14": 60.9,
+        "bollinger_upper": 1930717.3,
+        "bollinger_middle": 1748000.0,
+        "bollinger_lower": 1565282.7,
+        "sma_20": 1748000.0,
+        "sma_60": 1804016.7,
+        "trend": "상승세 (20일선 위)",
+        "overbought_level": "중립 구간"
+      }
+    }
+  ]
+}

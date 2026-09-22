@@ -1,0 +1,301 @@
+{
+  "sectors": [
+    {
+      "id": "semiconductor",
+      "name_kr": "반도체 & 하드웨어",
+      "name_en": "Semiconductors & Equipment",
+      "damodaran_unlevered_beta": 1.22,
+      "avg_debt_ratio": 12.5,
+      "avg_levered_beta": 1.34,
+      "avg_cost_of_capital": 9.45,
+      "avg_ebit_margin": 23.5,
+      "sales_to_capital": 1.42,
+      "rd_capitalization_boost": 4.8,
+      "macro_profile": {
+        "interest_rate_impact": "보통 부정적 (고밸류 시 할인율 상승 부담, 단 풍부한 현금성 자산 보유)",
+        "fx_impact": "강력 수혜 (달러 결제 비중 90% 이상으로 고환율/원화약세 시 영업이익 급증)",
+        "oil_impact": "중립 (간접적 운송비 영향)",
+        "cycle_phase": "AI 인프라 수요 폭발 및 고대역폭메모리(HBM) 슈퍼사이클"
+      },
+      "exit_recommendation_guide": "적정 PBR 1.8배 돌파 또는 다모다란 Base Fair Value +15% 초과 시 1차 분할 익절, RSI 75 이상 시 비중 축소",
+      "top_stocks_kr": [
+        {"name": "SK하이닉스", "ticker": "000660"},
+        {"name": "삼성전자", "ticker": "005930"},
+        {"name": "한미반도체", "ticker": "042700"},
+        {"name": "리노공업", "ticker": "058470"},
+        {"name": "이수페타시스", "ticker": "007660"}
+      ],
+      "top_stocks_us": [
+        {"name": "엔비디아", "ticker": "NVDA"},
+        {"name": "TSMC", "ticker": "TSM"},
+        {"name": "브로드컴", "ticker": "AVGO"},
+        {"name": "ASML", "ticker": "ASML"},
+        {"name": "퀄컴", "ticker": "QCOM"}
+      ]
+    },
+    {
+      "id": "software_ai",
+      "name_kr": "인터넷·소프트웨어 & 빅테크",
+      "name_en": "Software & Internet Services",
+      "damodaran_unlevered_beta": 1.18,
+      "avg_debt_ratio": 9.8,
+      "avg_levered_beta": 1.26,
+      "avg_cost_of_capital": 9.10,
+      "avg_ebit_margin": 28.2,
+      "sales_to_capital": 1.85,
+      "rd_capitalization_boost": 6.2,
+      "macro_profile": {
+        "interest_rate_impact": "매우 민감 (금리 하락 시 미래 현금흐름 현재가치 급증으로 최대 수혜)",
+        "fx_impact": "국내 포털은 중립/부정적, 글로벌 빅테크는 환율 헤지 및 달러 매출 수혜",
+        "oil_impact": "중립",
+        "cycle_phase": "클라우드 및 생성형 AI 유료화 전환 구간"
+      },
+      "exit_recommendation_guide": "PSR 15배 이상 진입 시 또는 영업이익 성장 둔화 조짐 발생 시 다모다란 적정가 도달 즉시 40% 분할 매도",
+      "top_stocks_kr": [
+        {"name": "NAVER", "ticker": "035420"},
+        {"name": "카카오", "ticker": "035720"},
+        {"name": "크래프톤", "ticker": "259960"},
+        {"name": "엔씨소프트", "ticker": "036570"},
+        {"name": "카카오페이", "ticker": "377300"}
+      ],
+      "top_stocks_us": [
+        {"name": "마이크로소프트", "ticker": "MSFT"},
+        {"name": "알파벳", "ticker": "GOOGL"},
+        {"name": "메타", "ticker": "META"},
+        {"name": "아마존", "ticker": "AMZN"},
+        {"name": "팔란티어", "ticker": "PLTR"}
+      ]
+    },
+    {
+      "id": "auto_mobility",
+      "name_kr": "자동차 & 모빌리티",
+      "name_en": "Automotive & Parts",
+      "damodaran_unlevered_beta": 0.88,
+      "avg_debt_ratio": 28.5,
+      "avg_levered_beta": 1.15,
+      "avg_cost_of_capital": 8.60,
+      "avg_ebit_margin": 8.9,
+      "sales_to_capital": 1.28,
+      "rd_capitalization_boost": 2.1,
+      "macro_profile": {
+        "interest_rate_impact": "부정적 (금리 인상 시 할부 금융 비용 증가로 차량 소비 위축, 인하 시 구매력 회복)",
+        "fx_impact": "매우 긍정적 (원화 약세 시 북미·유럽 시장 수출 단가 및 환산 이익 극대화)",
+        "oil_impact": "하이브리드/전기차 비중 높은 기업은 고유가 시 점유율 확대 기회",
+        "cycle_phase": "하이브리드(HEV) 캐시카우 바탕 주주환원(밸류업) 강화"
+      },
+      "exit_recommendation_guide": "PER 6~7배 도달 및 환율 1,300원 붕괴(원화강세 전환) 시 이익 피크아웃 우려로 분할 매도 실행",
+      "top_stocks_kr": [
+        {"name": "현대차", "ticker": "005380"},
+        {"name": "기아", "ticker": "000270"},
+        {"name": "현대모비스", "ticker": "012330"},
+        {"name": "현대위아", "ticker": "011210"},
+        {"name": "HL만도", "ticker": "204320"}
+      ],
+      "top_stocks_us": [
+        {"name": "테슬라", "ticker": "TSLA"},
+        {"name": "제너럴모터스", "ticker": "GM"},
+        {"name": "포드", "ticker": "F"},
+        {"name": "우버", "ticker": "UBER"},
+        {"name": "리비안", "ticker": "RIVN"}
+      ]
+    },
+    {
+      "id": "banking_finance",
+      "name_kr": "은행 & 금융지주",
+      "name_en": "Banks & Financial Services",
+      "damodaran_unlevered_beta": 0.55,
+      "avg_debt_ratio": 65.0,
+      "avg_levered_beta": 0.95,
+      "avg_cost_of_capital": 8.20,
+      "avg_ebit_margin": 35.0,
+      "sales_to_capital": 0.95,
+      "rd_capitalization_boost": 0.2,
+      "macro_profile": {
+        "interest_rate_impact": "복합적 (금리 상승 시 순이자마진(NIM) 확대, 인하 시 대출수요 증가 및 채권평가익)",
+        "fx_impact": "중립 (외화 부채/자산 익스포저 관리)",
+        "oil_impact": "중립",
+        "cycle_phase": "저PBR 해소 및 자사주 소각·배당 성향 상향 정책 지속"
+      },
+      "exit_recommendation_guide": "PBR 0.65~0.75배 진입 및 배당수익률 5% 미만 축소 시 차익 실현",
+      "top_stocks_kr": [
+        {"name": "KB금융", "ticker": "105560"},
+        {"name": "신한지주", "ticker": "055550"},
+        {"name": "하나금융지주", "ticker": "086790"},
+        {"name": "메리츠금융지주", "ticker": "138040"},
+        {"name": "카카오뱅크", "ticker": "323410"}
+      ],
+      "top_stocks_us": [
+        {"name": "JP모건체이스", "ticker": "JPM"},
+        {"name": "뱅크오브아메리카", "ticker": "BAC"},
+        {"name": "웰스파고", "ticker": "WFC"},
+        {"name": "골드만삭스", "ticker": "GS"},
+        {"name": "모건스탠리", "ticker": "MS"}
+      ]
+    },
+    {
+      "id": "battery_cleanenergy",
+      "name_kr": "2차전지 & 친환경 에너지",
+      "name_en": "Battery & Clean Energy",
+      "damodaran_unlevered_beta": 1.35,
+      "avg_debt_ratio": 32.0,
+      "avg_levered_beta": 1.62,
+      "avg_cost_of_capital": 10.80,
+      "avg_ebit_margin": 7.5,
+      "sales_to_capital": 0.82,
+      "rd_capitalization_boost": 5.4,
+      "macro_profile": {
+        "interest_rate_impact": "극단적 부정 (대규모 설비투자(CapEx) 조달비용 상승, 인하 시 반등 탄력 최고)",
+        "fx_impact": "보통 (수출 비중 높으나 원자재 수입 비중도 큼)",
+        "oil_impact": "고유가 시 전기차 경제성 부각으로 수혜, 저유가 시 수요 둔화(캐즘)",
+        "cycle_phase": "전기차 캐즘(일시적 둔화) 극복 중, 밸류에이션 리레이팅 탐색"
+      },
+      "exit_recommendation_guide": "EV/EBITDA 25배 이상 과열 또는 볼린저밴드 상단 이탈 시 철저한 비중 축소",
+      "top_stocks_kr": [
+        {"name": "LG에너지솔루션", "ticker": "373220"},
+        {"name": "POSCO홀딩스", "ticker": "005490"},
+        {"name": "에코프로비엠", "ticker": "247540"},
+        {"name": "삼성SDI", "ticker": "006400"},
+        {"name": "포스코퓨처엠", "ticker": "003670"}
+      ],
+      "top_stocks_us": [
+        {"name": "앨버말", "ticker": "ALB"},
+        {"name": "인페이즈에너지", "ticker": "ENPH"},
+        {"name": "퍼스트솔라", "ticker": "FSLR"},
+        {"name": "넥스트에라에너지", "ticker": "NEE"},
+        {"name": "퀀텀스케이프", "ticker": "QS"}
+      ]
+    },
+    {
+      "id": "biotech_pharma",
+      "name_kr": "바이오 & 제약",
+      "name_en": "Biotechnology & Pharmaceuticals",
+      "damodaran_unlevered_beta": 1.10,
+      "avg_debt_ratio": 15.0,
+      "avg_levered_beta": 1.24,
+      "avg_cost_of_capital": 9.30,
+      "avg_ebit_margin": 18.0,
+      "sales_to_capital": 1.10,
+      "rd_capitalization_boost": 12.5,
+      "macro_profile": {
+        "interest_rate_impact": "매우 긍정적 (금리 인하 시 바이오 신약 파이프라인 미래 DCF 가치 급격히 상승)",
+        "fx_impact": "수출 바이오시밀러는 달러 강세 수혜",
+        "oil_impact": "영향 없음",
+        "cycle_phase": "금리 인하 국면 최대 낙수효과 및 글로벌 기술이전 가속"
+      },
+      "exit_recommendation_guide": "임상 결과 발표 직전 기대감 정점(RSI 75+)에서 50% 선제 익절, 파이프라인 가치 반영 완료 시 전량 매도",
+      "top_stocks_kr": [
+        {"name": "알테오젠", "ticker": "196170"},
+        {"name": "삼성바이오로직스", "ticker": "207940"},
+        {"name": "셀트리온", "ticker": "068270"},
+        {"name": "유한양행", "ticker": "000100"},
+        {"name": "에이비엘바이오", "ticker": "298380"}
+      ],
+      "top_stocks_us": [
+        {"name": "일라이릴리", "ticker": "LLY"},
+        {"name": "노보노디스크", "ticker": "NVO"},
+        {"name": "머크", "ticker": "MRK"},
+        {"name": "애브비", "ticker": "ABBV"},
+        {"name": "암젠", "ticker": "AMGN"}
+      ]
+    },
+    {
+      "id": "energy_chemical",
+      "name_kr": "정유·화학 & 에너지",
+      "name_en": "Energy & Chemicals",
+      "damodaran_unlevered_beta": 0.92,
+      "avg_debt_ratio": 35.0,
+      "avg_levered_beta": 1.25,
+      "avg_cost_of_capital": 8.90,
+      "avg_ebit_margin": 6.8,
+      "sales_to_capital": 1.60,
+      "rd_capitalization_boost": 1.2,
+      "macro_profile": {
+        "interest_rate_impact": "중립",
+        "fx_impact": "원화 약세 시 원유 도입단가 상승 부담",
+        "oil_impact": "직접 수혜 (정제마진 개선 및 재고평가익 발생)",
+        "cycle_phase": "중국 경기 부양 및 지정학 리스크에 따른 정제마진 등락"
+      },
+      "exit_recommendation_guide": "정제마진 정점 도달 및 국제유가 85달러 돌파 시 경기 피크아웃 감안하여 분할 매도",
+      "top_stocks_kr": [
+        {"name": "SK이노베이션", "ticker": "096770"},
+        {"name": "S-Oil", "ticker": "010950"},
+        {"name": "LG화학", "ticker": "051910"},
+        {"name": "롯데케미칼", "ticker": "011170"},
+        {"name": "금호석유", "ticker": "011780"}
+      ],
+      "top_stocks_us": [
+        {"name": "엑슨모빌", "ticker": "XOM"},
+        {"name": "셰브론", "ticker": "CVX"},
+        {"name": "코노코필립스", "ticker": "COP"},
+        {"name": "옥시덴탈", "ticker": "OXY"},
+        {"name": "다우", "ticker": "DOW"}
+      ]
+    },
+    {
+      "id": "defense_shipbuilding",
+      "name_kr": "방산 & 조선",
+      "name_en": "Aerospace, Defense & Shipbuilding",
+      "damodaran_unlevered_beta": 0.85,
+      "avg_debt_ratio": 24.0,
+      "avg_levered_beta": 1.05,
+      "avg_cost_of_capital": 8.40,
+      "avg_ebit_margin": 10.5,
+      "sales_to_capital": 1.35,
+      "rd_capitalization_boost": 3.0,
+      "macro_profile": {
+        "interest_rate_impact": "보통 (수주 선급금 유입으로 순현금 구조 개선)",
+        "fx_impact": "강력 수혜 (수주 계약이 주로 달러화로 체결되어 환차익 증대)",
+        "oil_impact": "고유가 시 해양 플랜트 및 LNG선 발주 증가 수혜",
+        "cycle_phase": "지정학적 방위비 증액 + 글로벌 노후선박 친환경 교체 슈퍼사이클"
+      },
+      "exit_recommendation_guide": "수주잔고 피크 도달 및 다모다란 적정가 도달 시 보유량 30%씩 3회 분할 매도",
+      "top_stocks_kr": [
+        {"name": "한화에어로스페이스", "ticker": "012450"},
+        {"name": "현대로템", "ticker": "064350"},
+        {"name": "LIG넥스원", "ticker": "079550"},
+        {"name": "HD현대중공업", "ticker": "329180"},
+        {"name": "한화오션", "ticker": "042660"}
+      ],
+      "top_stocks_us": [
+        {"name": "록히드마틴", "ticker": "LMT"},
+        {"name": "RTX", "ticker": "RTX"},
+        {"name": "노스롭그루먼", "ticker": "NOC"},
+        {"name": "제너럴다이내믹스", "ticker": "GD"},
+        {"name": "헌팅턴잉걸스", "ticker": "HII"}
+      ]
+    },
+    {
+      "id": "power_grid",
+      "name_kr": "전력 & AI 인프라 / 원전",
+      "name_en": "Power, Grid & Nuclear Infrastructure",
+      "damodaran_unlevered_beta": 0.85,
+      "avg_debt_ratio": 22.0,
+      "avg_levered_beta": 1.04,
+      "avg_cost_of_capital": 8.20,
+      "avg_ebit_margin": 17.5,
+      "sales_to_capital": 1.70,
+      "rd_capitalization_boost": 1.5,
+      "macro_profile": {
+        "interest_rate_impact": "보통 부정적 (대규모 전력망 투자 조달비용 부담, 단 AI 빅테크 장기 전력구매계약(PPA)으로 가격 전가력 극대화)",
+        "fx_impact": "강력 수혜 (북미 초고압 변압기·배전반 품귀 현상으로 고환율 시 수출 마진 폭증)",
+        "oil_impact": "수혜 (화석연료 비용 상승 시 원자력 및 전력 인프라 경제성 급부상)",
+        "cycle_phase": "AI 데이터센터발 전력 소비 폭증 + 미국/유럽 50년 만의 노후 전력망 교체 슈퍼사이클"
+      },
+      "exit_recommendation_guide": "변압기 수주잔고 피크 도달 또는 밸류에이션(PBR 3.5배 / PER 30배) 초과 시 단계별 분할 매도",
+      "top_stocks_kr": [
+        {"name": "HD현대일렉트릭", "ticker": "267260"},
+        {"name": "LS ELECTRIC", "ticker": "010120"},
+        {"name": "효성중공업", "ticker": "298040"},
+        {"name": "두산에너빌리티", "ticker": "034020"},
+        {"name": "한국전력", "ticker": "015760"}
+      ],
+      "top_stocks_us": [
+        {"name": "컨스텔레이션에너지", "ticker": "CEG"},
+        {"name": "비스트라", "ticker": "VST"},
+        {"name": "GE버노바", "ticker": "GEV"},
+        {"name": "이튼", "ticker": "ETN"},
+        {"name": "뉴스케일파워", "ticker": "SMR"}
+      ]
+    }
+  ]
+}

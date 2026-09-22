@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Troster Stock 매수·매도 타이밍 분석 | Troster Stock Timing Navigator</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#1e1b4b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-[#090d16] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- 1. DUAL REAL-TIME MARKET BAR (NAVER FINANCE DOMESTIC + GLOBAL STREAMING) -->
+  <!-- ========================================================================= -->
+  <div class="bg-slate-950 border-b border-slate-800/90 sticky top-0 z-40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      
+      <!-- Left: Naver Finance Live Domestic Indices -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <!-- Live Pulse Badge -->
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/60 text-emerald-400 font-bold text-[11px] shadow-sm shadow-emerald-500/10">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400 -ml-3.5 inline-block"></span>
+          <span>네이버 증권 0초 실시간</span>
+        </div>
+
+        <!-- KOSPI Live Pill -->
+        <a href="https://stock.naver.com/domestic/index/KOSPI" target="_blank" rel="noopener noreferrer" 
+           id="top-kospi-pill" class="flex items-center gap-2 bg-slate-900 hover:bg-slate-850 border border-emerald-600/40 hover:border-emerald-400 px-3 py-1 rounded-lg transition group shadow-sm">
+          <div class="flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span class="font-extrabold text-white group-hover:text-emerald-300">코스피 KOSPI</span>
+          </div>
+          <span class="font-mono font-black text-sm text-emerald-400" id="top-kospi-val">6,997.50</span>
+          <span class="font-mono font-bold text-xs text-emerald-400" id="top-kospi-chg">▲ +1.50%</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-500 group-hover:text-emerald-400"></i>
+        </a>
+
+        <!-- KOSDAQ Live Pill -->
+        <a href="https://stock.naver.com/domestic/index/KOSDAQ" target="_blank" rel="noopener noreferrer" 
+           id="top-kosdaq-pill" class="flex items-center gap-2 bg-slate-900 hover:bg-slate-850 border border-emerald-600/40 hover:border-emerald-400 px-3 py-1 rounded-lg transition group shadow-sm">
+          <div class="flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span class="font-extrabold text-white group-hover:text-emerald-300">코스닥 KOSDAQ</span>
+          </div>
+          <span class="font-mono font-black text-sm text-emerald-400" id="top-kosdaq-val">833.49</span>
+          <span class="font-mono font-bold text-xs text-emerald-400" id="top-kosdaq-chg">▲ +0.77%</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-500 group-hover:text-emerald-400"></i>
+        </a>
+
+        <!-- FX USD/KRW Live Pill -->
+        <div class="hidden md:flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-lg">
+          <span class="text-slate-400 text-[11px]">원/달러 환율</span>
+          <span class="font-mono font-bold text-slate-200" id="top-fx-val">₩1,380.30</span>
+        </div>
+
+        <!-- US 10Y Rf Live Pill -->
+        <div class="hidden lg:flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-lg">
+          <span class="text-slate-400 text-[11px]">미국 10Y (Rf)</span>
+          <span class="font-mono font-bold text-amber-400" id="top-us10y-val">5.01%</span>
+        </div>
+
+        <!-- KR 10Y Live Pill -->
+        <div class="hidden xl:flex items-center gap-1.5 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-lg">
+          <span class="text-slate-400 text-[11px]">한국 10Y</span>
+          <span class="font-mono font-bold text-indigo-300" id="top-kr10y-val">3.35%</span>
+        </div>
+      </div>
+
+      <!-- Right: Timestamp & Controls -->
+      <div class="flex items-center space-x-2 text-xs">
+        <!-- Auto Refresh Countdown & Interval Selector Pill -->
+        <div class="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-lg text-[11px]" title="실시간 시세 자동 갱신 주기">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-400 hidden sm:inline">자동갱신:</span>
+          <span id="auto-refresh-countdown" class="font-mono font-bold text-emerald-300">01:00</span>
+          <select id="auto-refresh-interval-select" onchange="changeAutoRefreshInterval(this.value)" class="bg-slate-800 hover:bg-slate-750 text-slate-200 text-[10px] font-medium rounded border border-slate-700 px-1 py-0.5 focus:outline-none cursor-pointer">
+            <option value="60" selected>1분</option>
+            <option value="180">3분</option>
+            <option value="300">5분</option>
+            <option value="30">30초</option>
+          </select>
+        </div>
+
+        <span class="text-[11px] text-slate-400 font-mono hidden md:inline" id="live-sync-timestamp">기준시각: 실시간 반영</span>
+        <button onclick="refreshLiveRates()" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center space-x-1 transition text-[11px]" title="실시간 시세 수동 새로고침">
+          <i class="fa-solid fa-arrows-rotate text-[10px]" id="refresh-icon"></i>
+          <span>새로고침</span>
+        </button>
+        <button onclick="loadSamplePortfolio()" class="px-2.5 py-1 rounded bg-indigo-950/60 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-800/40 text-[11px] transition">
+          <i class="fa-solid fa-flask mr-1"></i>샘플 불러오기
+        </button>
+        <button onclick="clearAllPortfolio()" class="px-2.5 py-1 rounded bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/40 text-[11px] transition">
+          <i class="fa-solid fa-trash mr-1"></i>비우기
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 2. MAIN HEADER NAVIGATION                                                 -->
+  <!-- ========================================================================= -->
+  <header class="bg-slate-900/80 border-b border-slate-800/60 sticky top-0 z-30 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid fa-compass-drafting text-lg text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-indigo-100 to-amber-200 bg-clip-text text-transparent">
+              TROSTER STOCK TIMING NAVIGATOR
+            </h1>
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">BETA v2.0</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Troster Stock 매수·매도 타이밍 분석 (다모다란 DCF & 프로 차트 결합)</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex items-center space-x-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80 text-xs font-semibold">
+        <button onclick="switchTab('portfolio')" id="tab-btn-portfolio" class="nav-tab px-4 py-2 rounded-lg transition-all duration-200 bg-indigo-600 text-white shadow-sm">
+          <i class="fa-solid fa-chart-line mr-1.5"></i>포트폴리오 & 매도 분석
+        </button>
+        <button onclick="switchTab('macro')" id="tab-btn-macro" class="nav-tab px-4 py-2 rounded-lg transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800/50">
+          <i class="fa-solid fa-globe mr-1.5"></i>글로벌 매크로 & 지수 선물·원자재 레이더
+        </button>
+        <button onclick="switchTab('sectors')" id="tab-btn-sectors" class="nav-tab px-4 py-2 rounded-lg transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800/50">
+          <i class="fa-solid fa-layer-group mr-1.5"></i>매크로 섹터 민감도 맵
+        </button>
+        <button onclick="switchTab('calculator')" id="tab-btn-calculator" class="nav-tab px-4 py-2 rounded-lg transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800/50">
+          <i class="fa-solid fa-calculator mr-1.5"></i>다모다란 DCF 계산기
+        </button>
+        <button onclick="switchTab('chart')" id="tab-btn-chart" class="nav-tab px-4 py-2 rounded-lg transition-all duration-200 text-slate-400 hover:text-white hover:bg-slate-800/50">
+          <i class="fa-solid fa-chart-candlestick mr-1.5 text-amber-400"></i>📊 프로 차트 분석
+        </button>
+      </nav>
+
+      <!-- Right Action Button -->
+      <div class="flex items-center space-x-3">
+        <button onclick="openAddStockModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 flex items-center space-x-1.5 transition transform active:scale-95">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>내 매수종목 등록</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Tab Navigation Bar -->
+  <div class="md:hidden flex border-b border-slate-800 bg-slate-900/90 text-xs overflow-x-auto scrollbar-none px-2 py-1.5 space-x-1">
+    <button onclick="switchTab('portfolio')" class="mobile-nav-btn px-3 py-1.5 rounded-lg whitespace-nowrap bg-indigo-600 text-white font-semibold">포트폴리오 & 매도</button>
+    <button onclick="switchTab('macro')" class="mobile-nav-btn px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-400">지수 선물·원자재</button>
+    <button onclick="switchTab('sectors')" class="mobile-nav-btn px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-400">섹터 민감도</button>
+    <button onclick="switchTab('calculator')" class="mobile-nav-btn px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-400">DCF 계산기</button>
+    <button onclick="switchTab('chart')" class="mobile-nav-btn px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-400">📊 차트 분석</button>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 3. MAIN CONTENT CONTAINER                                                 -->
+  <!-- ========================================================================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- ======================================================================= -->
+    <!-- TAB 1: PORTFOLIO & EXIT TIMING NAVIGATOR (MAIN VIEW)                    -->
+    <!-- ======================================================================= -->
+    <section id="view-portfolio" class="tab-view space-y-6">
+      
+      <!-- REAL-TIME DOMESTIC & GLOBAL MACRO FLASH CARDS (NAVER FINANCE) -->
+      <div class="glass-panel p-4 border-l-4 border-l-emerald-500 bg-gradient-to-r from-slate-900 via-slate-900/90 to-emerald-950/20 shadow-lg">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3 border-b border-slate-800 pb-2.5">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block"></span>
+            <h3 class="font-extrabold text-sm text-white flex items-center gap-2">
+              <span>국내외 실시간 시장 지표 현황</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/50 font-medium flex items-center gap-1">
+                <i class="fa-solid fa-bolt text-emerald-400 text-[9px]"></i>네이버 증권 0초 실시간 연동
+              </span>
+            </h3>
+          </div>
+          <div class="flex items-center space-x-2 text-xs text-slate-400">
+            <span id="market-status-badge" class="px-2 py-0.5 rounded bg-emerald-900/40 text-emerald-300 border border-emerald-700/40 text-[11px] font-bold">장운영 중 (LIVE)</span>
+            <span class="text-slate-600">|</span>
+            <span id="market-sync-time" class="text-[11px] font-mono text-slate-300">실시간 연동 중</span>
+            <button onclick="refreshLiveRates()" class="ml-1 text-emerald-400 hover:text-emerald-300 text-xs flex items-center gap-1 bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition">
+              <i class="fa-solid fa-arrows-rotate text-[10px]" id="refresh-icon-2"></i>
+              <span>지수 새로고침</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <!-- KOSPI Live Card -->
+          <a href="https://stock.naver.com/domestic/index/KOSPI" target="_blank" rel="noopener noreferrer" 
+             class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/70 hover:bg-slate-900 transition group block shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300 group-hover:text-emerald-300 transition flex items-center gap-1">
+                <span>코스피 (KOSPI)</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-500 group-hover:text-emerald-400"></i>
+              </span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/50 font-mono">네이버 실시간</span>
+            </div>
+            <div class="mt-1 flex items-baseline justify-between">
+              <span class="text-xl sm:text-2xl font-black font-mono tracking-tight text-white" id="card-kospi-val">6,997.50</span>
+              <span class="text-xs font-bold font-mono text-emerald-400" id="card-kospi-chg">▲ +1.50%</span>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-[10px] text-slate-500 border-t border-slate-900 pt-1">
+              <span id="card-kospi-range">고가: 7,027 | 저가: 6,938</span>
+              <span class="text-emerald-400/90 font-medium">네이버 증권 바로가기 ↗</span>
+            </div>
+          </a>
+
+          <!-- KOSDAQ Live Card -->
+          <a href="https://stock.naver.com/domestic/index/KOSDAQ" target="_blank" rel="noopener noreferrer" 
+             class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/70 hover:bg-slate-900 transition group block shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300 group-hover:text-emerald-300 transition flex items-center gap-1">
+                <span>코스닥 (KOSDAQ)</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-500 group-hover:text-emerald-400"></i>
+              </span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-300 border border-emerald-700/50 font-mono">네이버 실시간</span>
+            </div>
+            <div class="mt-1 flex items-baseline justify-between">
+              <span class="text-xl sm:text-2xl font-black font-mono tracking-tight text-white" id="card-kosdaq-val">833.49</span>
+              <span class="text-xs font-bold font-mono text-emerald-400" id="card-kosdaq-chg">▲ +0.77%</span>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-[10px] text-slate-500 border-t border-slate-900 pt-1">
+              <span id="card-kosdaq-range">고가: 838 | 저가: 822</span>
+              <span class="text-emerald-400/90 font-medium">네이버 증권 바로가기 ↗</span>
+            </div>
+          </a>
+
+          <!-- USD/KRW Live Card -->
+          <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300">원/달러 환율 (USD/KRW)</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-blue-950 text-blue-300 border border-blue-800/40 font-mono">실시간</span>
+            </div>
+            <div class="mt-1 flex items-baseline justify-between">
+              <span class="text-xl sm:text-2xl font-black font-mono tracking-tight text-slate-100" id="card-fx-val">₩1,380.30</span>
+              <span class="text-xs font-bold font-mono text-blue-400" id="card-fx-chg">-0.18%</span>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-[10px] text-slate-500 border-t border-slate-900 pt-1">
+              <span>외환시장 실시간 환율</span>
+              <span class="text-slate-400">미국주식 원화 환산 기준</span>
+            </div>
+          </div>
+
+          <!-- US 10Y Rf Live Card -->
+          <div class="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300">미국 10Y 국채 (다모다란 Rf)</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800/40 font-mono">WACC 기준</span>
+            </div>
+            <div class="mt-1 flex items-baseline justify-between">
+              <span class="text-xl sm:text-2xl font-black font-mono tracking-tight text-amber-400" id="card-us10y-val">5.01%</span>
+              <span class="text-xs font-bold font-mono text-slate-400" id="card-kr10y-sub">한국 10Y: 3.35%</span>
+            </div>
+            <div class="mt-1.5 flex items-center justify-between text-[10px] text-slate-500 border-t border-slate-900 pt-1">
+              <span>글로벌 무위험수익률</span>
+              <span class="text-amber-400/90 font-medium">DCF 가치평가 할인율 연동</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio Overview Stats Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div class="glass-panel p-4 flex flex-col justify-between border-l-4 border-l-indigo-500">
+          <span class="text-xs text-slate-400 font-medium">총 매수 원금</span>
+          <div class="mt-1">
+            <span class="text-lg sm:text-xl font-bold tracking-tight text-white" id="stat-total-invested">₩0</span>
+          </div>
+          <span class="text-[11px] text-slate-500 mt-1">국내외 합산 투자액</span>
+        </div>
+
+        <div class="glass-panel p-4 flex flex-col justify-between border-l-4 border-l-blue-500">
+          <span class="text-xs text-slate-400 font-medium">현재 평가 총액</span>
+          <div class="mt-1">
+            <span class="text-lg sm:text-xl font-bold tracking-tight text-white" id="stat-total-current">₩0</span>
+          </div>
+          <span class="text-[11px] text-slate-500 mt-1" id="stat-fx-rate">적용환율: 1$ = ₩1,380.3</span>
+        </div>
+
+        <div class="glass-panel p-4 flex flex-col justify-between border-l-4 border-slate-700" id="stat-profit-card">
+          <span class="text-xs text-slate-400 font-medium">총 평가 손익</span>
+          <div class="mt-1 flex items-baseline space-x-2">
+            <span class="text-lg sm:text-xl font-bold tracking-tight text-slate-300" id="stat-total-profit">₩0</span>
+            <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400" id="stat-total-profit-pct">0.0%</span>
+          </div>
+          <span class="text-[11px] text-slate-500 mt-1">실시간 기준 수익률</span>
+        </div>
+
+        <div class="glass-panel p-4 flex flex-col justify-between border-l-4 border-l-amber-500">
+          <span class="text-xs text-slate-400 font-medium">관리 종목 수</span>
+          <div class="mt-1 flex items-baseline space-x-2">
+            <span class="text-lg sm:text-xl font-bold tracking-tight text-amber-300" id="stat-stock-count">0개</span>
+            <span class="text-xs text-slate-400">종목</span>
+          </div>
+          <span class="text-[11px] text-slate-500 mt-1">다모다란 DCF 추적</span>
+        </div>
+
+        <div class="col-span-2 sm:col-span-4 lg:col-span-1 glass-panel p-4 flex flex-col justify-between border-l-4 border-l-emerald-500 bg-emerald-950/10">
+          <span class="text-xs text-emerald-400 font-medium flex items-center">
+            <i class="fa-solid fa-shield-halved mr-1.5"></i>다모다란 WACC 기준금리
+          </span>
+          <div class="mt-1">
+            <span class="text-lg font-bold text-white" id="stat-rf-rate">US 10Y: 5.01%</span>
+          </div>
+          <span class="text-[11px] text-emerald-500/80 mt-1">KR 10Y: 3.35% 연동</span>
+        </div>
+      </div>
+
+      <!-- Main Two-Column Cockpit Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Column (4 Cols): Stock Portfolio List -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-wallet text-indigo-400"></i>
+              <h2 class="font-bold text-sm text-slate-200 tracking-wide">내 매수 종목 리스트</h2>
+              <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-700/50" title="100% 브라우저 로컬 저장 (개인 매수가/수량 서버 전송 차단)">
+                <i class="fa-solid fa-shield-halved text-[9px]"></i>
+                <span>로컬 보안 저장</span>
+              </span>
+              <span class="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/50">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="portfolio-sync-time">실시간 연동</span>
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="refreshLiveRates()" class="text-xs text-slate-400 hover:text-emerald-300 font-medium flex items-center gap-1 bg-slate-900/80 hover:bg-slate-800 px-2 py-1 rounded-lg border border-slate-800 transition" title="실시간 시세 즉시 새로고침">
+                <i class="fa-solid fa-arrows-rotate text-[10px]" id="refresh-icon-port"></i>
+                <span>시세 갱신</span>
+              </button>
+              <button onclick="openAddStockModal()" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center">
+                <i class="fa-solid fa-plus-circle mr-1"></i>종목 추가
+              </button>
+            </div>
+          </div>
+
+          <!-- Stock Cards Scrollable List -->
+          <div id="portfolio-list-container" class="space-y-3 max-h-[750px] overflow-y-auto pr-1">
+            <!-- Dynamic cards or empty state injected here -->
+          </div>
+        </div>
+
+        <!-- Right Column (8 Cols): Deep-Dive Valuation & Exit Navigator -->
+        <div class="lg:col-span-8 space-y-6">
+          
+          <!-- STATE A: EMPTY PORTFOLIO ONBOARDING HERO BANNER -->
+          <div id="stock-empty-container" class="glass-panel p-8 sm:p-12 text-center relative overflow-hidden border border-indigo-500/30 shadow-2xl">
+            <div class="absolute -top-24 -right-24 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="max-w-xl mx-auto space-y-5">
+              <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-3xl text-white shadow-xl shadow-indigo-600/30">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+              </div>
+
+              <div>
+                <h3 class="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  내 주식의 매수 정보를 등록해 보세요
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                  내가 산 국내외 주식의 <strong>종목명, 매수 가격(평단가), 수량</strong>을 넣으시면 다모다란 교수의 DCF 내재가치와 차트 기술적 지표를 결합하여 <span class="text-amber-400 font-bold">'언제, 얼마에, 몇 주를 매도해야 하는지'</span> 직관적인 매도 신호등을 즉시 계산해 드립니다.
+                </p>
+              </div>
+
+              <!-- Big CTA Button -->
+              <div>
+                <button onclick="openAddStockModal()" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 hover:opacity-95 text-white font-extrabold text-sm shadow-xl shadow-indigo-500/30 transition transform hover:scale-105 active:scale-95 flex items-center justify-center mx-auto space-x-2">
+                  <i class="fa-solid fa-plus-circle text-base"></i>
+                  <span>지금 내 매수 종목 등록하기</span>
+                </button>
+              </div>
+
+              <!-- Quick Start Stock Chips -->
+              <div class="pt-4 border-t border-slate-800/80 space-y-2">
+                <span class="text-xs text-slate-400 font-medium">⚡ 자주 찾는 대표 종목 빠른 입력:</span>
+                <div class="flex flex-wrap justify-center gap-2 text-xs">
+                  <button onclick="openAddWithPreset('samsung')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:text-emerald-300 text-slate-300 transition">
+                    + 삼성전자 (005930)
+                  </button>
+                  <button onclick="openAddWithPreset('skhynix')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:text-emerald-300 text-slate-300 transition">
+                    + SK하이닉스 (000660)
+                  </button>
+                  <button onclick="openAddWithPreset('hyundai')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:text-emerald-300 text-slate-300 transition">
+                    + 현대차 (005380)
+                  </button>
+                  <button onclick="openAddWithPreset('naver')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:text-emerald-300 text-slate-300 transition">
+                    + NAVER (035420)
+                  </button>
+                  <button onclick="openAddWithPreset('kakao')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:text-emerald-300 text-slate-300 transition">
+                    + 카카오 (035720)
+                  </button>
+                  <button onclick="openAddWithPreset('celltrion')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-emerald-500 hover:text-emerald-300 text-slate-300 transition">
+                    + 셀트리온 (068270)
+                  </button>
+                  <button onclick="openAddWithPreset('nvda')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-blue-500 hover:text-blue-300 text-slate-300 transition">
+                    + NVIDIA (NVDA)
+                  </button>
+                  <button onclick="openAddWithPreset('apple')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-blue-500 hover:text-blue-300 text-slate-300 transition">
+                    + Apple (AAPL)
+                  </button>
+                  <button onclick="openAddWithPreset('tesla')" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 hover:border-blue-500 hover:text-blue-300 text-slate-300 transition">
+                    + Tesla (TSLA)
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- STATE B: DETAILED SELECTED STOCK HERO CARD -->
+          <div id="stock-hero-container" class="glass-panel p-6 relative overflow-hidden border border-slate-700/60 shadow-2xl hidden">
+            <!-- Background Glow -->
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Stock Header Row -->
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+              <div class="flex items-center space-x-3">
+                <div id="hero-market-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+                  KR
+                </div>
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-2xl font-black text-white tracking-tight" id="hero-stock-name">-</h3>
+                    <span class="text-sm font-mono text-slate-400" id="hero-stock-ticker">-</span>
+                    <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-medium" id="hero-sector-name">-</span>
+                    <a id="hero-naver-link" href="#" target="_blank" rel="noopener noreferrer" class="hidden text-xs text-emerald-400 hover:text-emerald-300 font-bold items-center gap-1 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40 transition">
+                      <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>네이버 증권 시세
+                    </a>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-0.5" id="hero-stock-notes">-</p>
+                </div>
+              </div>
+
+              <!-- Price & P&L Info -->
+              <div class="text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <span class="text-2xl font-mono font-extrabold text-white" id="hero-current-price">₩0</span>
+                  <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-700/50 font-sans font-bold inline-flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE
+                  </span>
+                </div>
+                <div class="flex items-center justify-end space-x-2 text-xs font-semibold mt-0.5">
+                  <span id="hero-day-change" class="text-emerald-400">+0.0%</span>
+                  <span class="text-slate-600">|</span>
+                  <span id="hero-profit-badge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">수익률: 0.0%</span>
+                </div>
+                <div class="flex items-center justify-end space-x-2 mt-1">
+                  <div class="text-[11px] text-slate-500">
+                    평단가: <span id="hero-buy-price" class="text-slate-300 font-mono">₩0</span> (<span id="hero-quantity">0주</span> 보유)
+                  </div>
+                  <button onclick="deleteCurrentHeroStock()" class="text-[11px] text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 px-2 py-0.5 rounded border border-rose-800/40 transition flex items-center gap-1" title="현재 종목 삭제">
+                    <i class="fa-regular fa-trash-can text-[10px]"></i>삭제
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- CORE EXIT SIGNAL COMPASS & GAUGE BANNER -->
+            <div class="mt-5 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/95 to-slate-950 border" id="exit-signal-banner">
+              <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                
+                <div class="flex items-center space-x-4">
+                  <!-- Signal Traffic Light Icon -->
+                  <div id="exit-signal-icon-box" class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-lg border">
+                    <i class="fa-solid fa-bell"></i>
+                  </div>
+                  
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-slate-400">다모다란 & 차트 융합 매도 판정</span>
+                      <span id="exit-signal-badge" class="text-xs px-2.5 py-0.5 rounded-full font-bold">판정 대기</span>
+                    </div>
+                    <h4 class="text-base sm:text-lg font-bold text-white mt-1 tracking-tight" id="exit-headline">
+                      매도 신호 분석 중
+                    </h4>
+                  </div>
+                </div>
+
+                <!-- Sell Urgency Gauge Score -->
+                <div class="w-full md:w-48 bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-center shrink-0">
+                  <div class="flex justify-between text-xs text-slate-400 mb-1">
+                    <span>매도 압력 지수</span>
+                    <span class="font-bold text-amber-400 font-mono" id="exit-gauge-score-text">0 / 100</span>
+                  </div>
+                  <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5">
+                    <div id="exit-gauge-bar" class="gauge-fill h-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500" style="width: 10%;"></div>
+                  </div>
+                  <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                    <span>홀딩/매수</span>
+                    <span>분할익절</span>
+                    <span>적극매도</span>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Actionable Guidance Box -->
+              <div class="mt-4 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed flex items-start space-x-3">
+                <i class="fa-solid fa-lightbulb text-amber-400 text-base mt-0.5 shrink-0"></i>
+                <div id="exit-action-guidance">
+                  매도 타이밍 분석 결과가 여기에 표시됩니다.
+                </div>
+              </div>
+            </div>
+
+            <!-- DAMODARAN 3-TIER VALUATION BAND CARDS -->
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              
+              <!-- Conservative Band -->
+              <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/90 relative overflow-hidden">
+                <div class="flex items-center justify-between text-xs text-emerald-400 font-semibold mb-1">
+                  <span>1. 보수적 가치 (안전마진 20%)</span>
+                  <i class="fa-solid fa-shield text-[11px]"></i>
+                </div>
+                <div class="text-lg font-mono font-bold text-white" id="val-conservative-price">-</div>
+                <div class="text-[11px] text-slate-400 mt-1">하방 지지선 / 저평가 매수 안심 구역</div>
+              </div>
+
+              <!-- Base Fair Value -->
+              <div class="bg-slate-950/60 p-3.5 rounded-xl border border-amber-500/40 relative overflow-hidden ring-1 ring-amber-500/20">
+                <div class="flex items-center justify-between text-xs text-amber-400 font-semibold mb-1">
+                  <span>2. 기본 적정가치 (Fair Value)</span>
+                  <i class="fa-solid fa-bullseye text-[11px]"></i>
+                </div>
+                <div class="text-lg font-mono font-bold text-amber-300" id="val-base-price">-</div>
+                <div class="text-[11px] text-slate-400 mt-1 flex justify-between items-center">
+                  <span>1차 매도 기준선</span>
+                  <span class="font-bold text-amber-400" id="val-base-gap">괴리율 0.0%</span>
+                </div>
+              </div>
+
+              <!-- Bullish Target -->
+              <div class="bg-slate-950/60 p-3.5 rounded-xl border border-indigo-500/30 relative overflow-hidden">
+                <div class="flex items-center justify-between text-xs text-indigo-400 font-semibold mb-1">
+                  <span>3. 낙관적 가치 (Bull Target)</span>
+                  <i class="fa-solid fa-rocket text-[11px]"></i>
+                </div>
+                <div class="text-lg font-mono font-bold text-indigo-300" id="val-bullish-price">-</div>
+                <div class="text-[11px] text-slate-400 mt-1">모멘텀 오버슈팅 / 최종 전량 익절선</div>
+              </div>
+
+            </div>
+
+            <!-- INTERACTIVE CHART AREA: PRICE vs VALUATION BANDS & RSI -->
+            <div class="mt-6 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-chart-area text-indigo-400"></i>
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-200">주가 vs 다모다란 밸류에이션 밴드 & 차트 보조지표</h4>
+                </div>
+                <div class="flex items-center space-x-3 text-[11px] text-slate-400">
+                  <span class="flex items-center"><span class="w-2.5 h-0.5 bg-amber-400 mr-1.5"></span>적정가(Fair Value)</span>
+                  <span class="flex items-center"><span class="w-2.5 h-0.5 bg-indigo-400 mr-1.5"></span>낙관상단</span>
+                  <span class="flex items-center"><span class="w-2.5 h-0.5 bg-emerald-400 mr-1.5"></span>보수하단</span>
+                  <span class="flex items-center"><span class="w-2.5 h-1.5 bg-blue-500 rounded-sm mr-1.5"></span>현재주가</span>
+                </div>
+              </div>
+
+              <!-- Chart Canvas Container -->
+              <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800">
+                <div class="h-64 sm:h-72 w-full">
+                  <canvas id="stockValuationChart"></canvas>
+                </div>
+                <!-- Technical Indicators Bar below chart -->
+                <div class="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div class="bg-slate-900/60 p-2.5 rounded-lg">
+                    <span class="text-slate-500 block text-[11px]">RSI (14일 상대강도)</span>
+                    <span class="font-mono font-bold text-white text-sm" id="tech-rsi">50.0</span>
+                    <span class="text-[10px] text-slate-400 block" id="tech-rsi-status">중립</span>
+                  </div>
+                  <div class="bg-slate-900/60 p-2.5 rounded-lg">
+                    <span class="text-slate-500 block text-[11px]">볼린저 밴드 상단</span>
+                    <span class="font-mono font-bold text-white text-sm" id="tech-bb-upper">-</span>
+                    <span class="text-[10px] text-slate-400 block">이탈 시 단기 과열</span>
+                  </div>
+                  <div class="bg-slate-900/60 p-2.5 rounded-lg">
+                    <span class="text-slate-500 block text-[11px]">20일 이동평균선</span>
+                    <span class="font-mono font-bold text-white text-sm" id="tech-sma-20">-</span>
+                    <span class="text-[10px] text-emerald-400 block">단기 지지선 유지</span>
+                  </div>
+                  <div class="bg-slate-900/60 p-2.5 rounded-lg">
+                    <span class="text-slate-500 block text-[11px]">60일선 (손절 기준)</span>
+                    <span class="font-mono font-bold text-rose-400 text-sm" id="tech-sma-60">-</span>
+                    <span class="text-[10px] text-slate-400 block">하향 이탈 시 비중축소</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ACTIONABLE 3-STEP EXIT PLAN TABLE -->
+            <div class="mt-6 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-list-check text-amber-400"></i>
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-200">단계별 분할 매도 실행 주문 가이드 (Exit Order Blueprint)</h4>
+                </div>
+                <div class="text-[11px] text-rose-400 font-semibold flex items-center">
+                  <i class="fa-solid fa-shield-cat mr-1"></i>
+                  트레일링 손절가: <span id="plan-stop-loss-price" class="font-mono font-bold ml-1">-</span>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto rounded-xl border border-slate-800">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                    <tr>
+                      <th class="p-3">매도 단계</th>
+                      <th class="p-3">목표 매도가격</th>
+                      <th class="p-3">권장 매도 비율</th>
+                      <th class="p-3">매도 권장 수량</th>
+                      <th class="p-3">발동 트리거 조건</th>
+                      <th class="p-3 text-right">상태</th>
+                    </tr>
+                  </thead>
+                  <tbody id="exit-plan-tbody" class="divide-y divide-slate-800/60 font-mono text-slate-300">
+                    <!-- Dynamic rows injected -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- DAMODARAN 4 DRIVERS & DCF METRICS -->
+            <div class="mt-6 p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                  <i class="fa-solid fa-dna text-purple-400"></i>
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-200">다모다란 4대 가치 동인(Four Drivers) & WACC 분석</h4>
+                </div>
+                <span class="text-[11px] text-purple-300 bg-purple-950/50 px-2 py-0.5 rounded border border-purple-800/40">FCFF 2-Stage Model</span>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-xs">
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800/70">
+                  <span class="text-slate-500 block text-[11px]">가중자본비용(WACC)</span>
+                  <span class="font-bold text-white text-sm" id="metric-wacc">-</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">할인율 (Cost of Capital)</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800/70">
+                  <span class="text-slate-500 block text-[11px]">자기자본비용(Ke)</span>
+                  <span class="font-bold text-white text-sm" id="metric-ke">-</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">CAPM 기반 요구수익률</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800/70">
+                  <span class="text-slate-500 block text-[11px]">레버리지 베타(β)</span>
+                  <span class="font-bold text-amber-300 text-sm" id="metric-beta">-</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">시장 변동성 배수</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800/70">
+                  <span class="text-slate-500 block text-[11px]">5개년 기대성장률(g)</span>
+                  <span class="font-bold text-emerald-400 text-sm" id="metric-growth">-</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">재투자율 × ROIC</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800/70">
+                  <span class="text-slate-500 block text-[11px]">목표 영업이익률</span>
+                  <span class="font-bold text-white text-sm" id="metric-margin">-</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">정상화된 EBIT 마진</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800/70">
+                  <span class="text-slate-500 block text-[11px]">자본회전율 (S/C)</span>
+                  <span class="font-bold text-indigo-300 text-sm" id="metric-sales-cap">-</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">재투자 효율성 배수</span>
+                </div>
+              </div>
+
+              <!-- REAL-TIME INTEREST RATE SENSITIVITY SIMULATION SLIDER -->
+              <div class="mt-4 pt-4 border-t border-slate-800/80">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-sliders text-amber-400 text-xs"></i>
+                    <span class="text-xs font-bold text-slate-200">다모다란 금리 민감도 실시간 시뮬레이터 (Rf Sensitivity)</span>
+                  </div>
+                  <span class="text-xs font-mono text-amber-400 font-bold" id="slider-rf-val">현재 적용 10Y 국채: 5.01%</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                  <span class="text-xs text-slate-400">3.0% (저금리)</span>
+                  <input type="range" id="rf-slider" min="3.0" max="6.5" step="0.05" value="5.01" 
+                         class="w-full accent-indigo-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                         oninput="handleRfSliderChange(this.value)" />
+                  <span class="text-xs text-slate-400">6.5% (고금리)</span>
+                  <button onclick="resetRfSlider()" class="px-2.5 py-1 text-[11px] rounded bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium shrink-0">
+                    원래대로
+                  </button>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-2">
+                  💡 <strong>다모다란 원리:</strong> 국채 금리(Rf)가 상승하면 기업의 할인율(WACC)이 높아져 미래 현금흐름의 현재가치와 적정 매도가격이 낮아집니다. 슬라이더를 움직여 금리 변화에 따른 목표가를 실시간으로 테스트하세요.
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- ======================================================================= -->
+    <!-- TAB 2: GLOBAL MACRO & INDEX FUTURES / COMMODITIES RADAR                -->
+    <!-- ======================================================================= -->
+    <section id="view-macro" class="tab-view hidden space-y-6">
+      
+      <!-- Macro Overview Banner -->
+      <div class="glass-panel p-6 border-l-4 border-l-blue-500 shadow-xl">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs font-black uppercase tracking-wider text-blue-400 flex items-center gap-1">
+                <i class="fa-solid fa-satellite-dish text-amber-400"></i>Macro & Futures Radar
+              </span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800/40 font-semibold">한·미·독·일·홍 선물 실시간</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800/40 font-semibold">유가·금·구리·희토류 원자재</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800/40 font-semibold">다모다란 WACC 국채 연동</span>
+            </div>
+            <h3 class="text-xl sm:text-2xl font-black text-white mt-1.5" id="macro-regime-title">
+              🌐 글로벌 매크로 & 지수 선물·원자재 레이더
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-300 mt-1.5 max-w-3xl leading-relaxed" id="macro-valuation-implication">
+              국내외 지수 선물(코스피 200 주간/야간, 미국 NQ·ES·YM, 독·일·홍)과 핵심 원자재(유가, 금, 구리 닥터코퍼, 희토류) 및 미국 10년물 국채(Rf) 금리를 실시간으로 추적하여 포트폴리오의 리스크와 적정 매도 타이밍을 선행 진단합니다.
+            </p>
+          </div>
+          <div class="text-right text-xs text-slate-400 shrink-0 space-y-1.5">
+            <div class="flex items-center justify-end space-x-2">
+              <button onclick="fetchMacro(true)" id="btn-refresh-macro" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition font-semibold text-xs flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-rotate text-indigo-400" id="icon-refresh-macro"></i>
+                <span>실시간 새로고침</span>
+              </button>
+            </div>
+            <span class="font-mono text-slate-300 block text-[11px]" id="macro-last-updated">2026-09-22 08:50:00 KST</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- SECTION 1: GLOBAL INDEX FUTURES (국내외 지수 선물)                  -->
+      <!-- =================================================================== -->
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-white text-sm shadow">
+              <i class="fa-solid fa-bolt-lightning"></i>
+            </div>
+            <div>
+              <h3 class="font-black text-base text-white tracking-tight">국내외 지수 선물 실시간 현황 (한·미·독·일·홍)</h3>
+              <p class="text-[11px] text-slate-400">코스피 200 주간/야간 베이시스(콘탱고/백워데이션) & 글로벌 선물 선행 흐름</p>
+            </div>
+          </div>
+
+          <!-- Futures Filter Tabs -->
+          <div class="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+            <button onclick="filterFutures('all')" id="btn-fut-all" class="fut-filter-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold transition">전체 (9선)</button>
+            <button onclick="filterFutures('KR')" id="btn-fut-kr" class="fut-filter-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">🇰🇷 국내 (주·야간)</button>
+            <button onclick="filterFutures('US')" id="btn-fut-us" class="fut-filter-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">🇺🇸 미국 (NQ·ES·YM)</button>
+            <button onclick="filterFutures('GLOBAL')" id="btn-fut-global" class="fut-filter-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">🌐 글로벌 (독·일·홍)</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Futures Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="macro-futures-container">
+          <!-- Dynamic Futures Cards injected here -->
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- SECTION 2: COMMODITIES & STRATEGIC METALS (유가·금·구리·희토류)      -->
+      <!-- =================================================================== -->
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm shadow">
+              <i class="fa-solid fa-gem"></i>
+            </div>
+            <div>
+              <h3 class="font-black text-base text-white tracking-tight">유가 · 금 · 구리(닥터 코퍼) · 희토류 전략 광물 레이더</h3>
+              <p class="text-[11px] text-slate-400">글로벌 인플레이션, 경기 선행지표 및 미·중 패권 전략 광물 실시간 가격 추적</p>
+            </div>
+          </div>
+
+          <!-- Commodities Filter Tabs -->
+          <div class="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+            <button onclick="filterCommodities('all')" id="btn-comm-all" class="comm-filter-btn px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold transition">전체 (9종)</button>
+            <button onclick="filterCommodities('energy')" id="btn-comm-energy" class="comm-filter-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">🛢️ 유가·에너지</button>
+            <button onclick="filterCommodities('precious')" id="btn-comm-precious" class="comm-filter-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">🪙 금·귀금속</button>
+            <button onclick="filterCommodities('industrial')" id="btn-comm-industrial" class="comm-filter-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">🏭 구리·산업금속</button>
+            <button onclick="filterCommodities('strategic')" id="btn-comm-strategic" class="comm-filter-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">⚡ 희토류·전략광물</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Commodities Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="macro-commodities-container">
+          <!-- Dynamic Commodities Cards injected here -->
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- SECTION 3: US & GLOBAL TREASURY YIELDS (국채 일드 커브)              -->
+      <!-- =================================================================== -->
+      <div class="space-y-4">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-landmark text-amber-400"></i>
+          <h3 class="font-bold text-base text-slate-100">미국 및 주요국 국채 금리 현황 (다모다란 WACC 핵심 변수)</h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <!-- US 5Y -->
+          <div class="glass-panel p-4 border border-slate-800">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>미국 국채 5년물</span>
+              <span class="text-emerald-400 font-mono">-0.03%p</span>
+            </div>
+            <div class="text-2xl font-mono font-bold text-white" id="yield-us5y">4.15%</div>
+            <span class="text-[11px] text-slate-500 mt-1 block">단기 통화정책 민감도</span>
+          </div>
+
+          <!-- US 10Y (Global Benchmark Rf) -->
+          <div class="glass-panel p-4 border border-amber-500/50 ring-1 ring-amber-500/20 bg-amber-950/10">
+            <div class="flex items-center justify-between text-xs text-amber-400 font-semibold mb-1">
+              <span>미국 국채 10년물 (글로벌 Rf)</span>
+              <span class="text-emerald-400 font-mono">-0.02%p</span>
+            </div>
+            <div class="text-2xl font-mono font-bold text-amber-300" id="yield-us10y">5.01%</div>
+            <span class="text-[11px] text-amber-400/80 mt-1 block">다모다란 DCF 무위험수익률</span>
+          </div>
+
+          <!-- US 20Y -->
+          <div class="glass-panel p-4 border border-slate-800">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>미국 국채 20년물</span>
+              <span class="text-emerald-400 font-mono">-0.02%p</span>
+            </div>
+            <div class="text-2xl font-mono font-bold text-white" id="yield-us20y">5.25%</div>
+            <span class="text-[11px] text-slate-500 mt-1 block">장기 인프라 자본비용</span>
+          </div>
+
+          <!-- US 30Y -->
+          <div class="glass-panel p-4 border border-slate-800">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>미국 국채 30년물</span>
+              <span class="text-emerald-400 font-mono">-0.01%p</span>
+            </div>
+            <div class="text-2xl font-mono font-bold text-white" id="yield-us30y">5.18%</div>
+            <span class="text-[11px] text-slate-500 mt-1 block">초장기 경제 성장 전망</span>
+          </div>
+
+          <!-- KR 10Y -->
+          <div class="glass-panel p-4 border border-slate-800 border-l-4 border-l-indigo-500">
+            <div class="flex items-center justify-between text-xs text-indigo-400 font-semibold mb-1">
+              <span>한국 국채 10년물 (국내 Rf)</span>
+              <span class="text-emerald-400 font-mono">-0.02%p</span>
+            </div>
+            <div class="text-2xl font-mono font-bold text-white" id="yield-kr10y">3.35%</div>
+            <span class="text-[11px] text-slate-400 mt-1 block">국내 주식 WACC 산정 기준</span>
+          </div>
+        </div>
+
+        <!-- US Treasury Yield Curve Chart & Spread Analysis -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div class="lg:col-span-8 glass-panel p-5">
+            <h4 class="text-sm font-bold text-slate-200 mb-3 flex items-center">
+              <i class="fa-solid fa-chart-line mr-2 text-indigo-400"></i>
+              미국 국채 수익률 곡선 (Yield Curve: 5Y · 10Y · 20Y · 30Y)
+            </h4>
+            <div class="h-64 w-full">
+              <canvas id="yieldCurveChart"></canvas>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 glass-panel p-5 space-y-4">
+            <h4 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2">
+              <i class="fa-solid fa-scale-balanced mr-1.5 text-amber-400"></i>
+              일드 커브 해석 & 주식 시사점
+            </h4>
+            
+            <div class="space-y-3 text-xs">
+              <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                <span class="font-bold text-slate-300 block">장단기 금리차 (10Y - 5Y)</span>
+                <span class="text-emerald-400 font-mono font-bold text-sm">+0.86%p (정상 우상향 커브)</span>
+                <p class="text-[11px] text-slate-400 mt-1">
+                  장기채 금리가 단기채보다 높은 정상 커브로, 경기 침체(R의 공포) 위험이 축소되는 흐름을 나타냅니다.
+                </p>
+              </div>
+
+              <div class="bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                <span class="font-bold text-slate-300 block">다모다란 WACC 자본비용 영향</span>
+                <p class="text-[11px] text-slate-400 mt-1">
+                  국채 10년물 금리가 다모다란 WACC의 <strong>무위험수익률(Rf)</strong>로 직접 반영됩니다. 금리가 낮아질수록 주식의 할인율이 낮아져 적정 매도 목표가가 상향됩니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- SECTION 4: GLOBAL FX RATES & SPOT STOCK INDICES                     -->
+      <!-- =================================================================== -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- FX Rates -->
+        <div class="glass-panel p-5 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h4 class="text-xs sm:text-sm font-bold text-slate-200 flex items-center">
+              <i class="fa-solid fa-money-bill-transfer mr-2 text-emerald-400"></i>주요 글로벌 환율 현황
+            </h4>
+            <span class="text-[11px] text-slate-400 font-mono">실시간 통화 호가</span>
+          </div>
+          <div class="space-y-2" id="macro-fx-list">
+            <!-- Dynamic list -->
+          </div>
+        </div>
+
+        <!-- Major Spot Stock Indices -->
+        <div class="glass-panel p-5 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h4 class="text-xs sm:text-sm font-bold text-slate-200 flex items-center">
+              <i class="fa-solid fa-arrow-trend-up mr-2 text-indigo-400"></i>국내외 주요 현물 증시 지수
+            </h4>
+            <span class="text-[11px] text-slate-400 font-mono">코스피·코스닥·S&P·나스닥·다우</span>
+          </div>
+          <div class="space-y-2" id="macro-indices-list">
+            <!-- Dynamic list -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 3: MACRO SECTOR SENSITIVITY & ROTATION MATRIX                      -->
+    <!-- ======================================================================= -->
+    <section id="view-sectors" class="tab-view hidden space-y-6">
+      
+      <!-- Finviz Market Map Header & Control Bar -->
+      <div class="glass-panel p-5 space-y-4 border-l-4 border-l-indigo-500 shadow-xl">
+        <!-- Top Row: Title & Badges -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+              <i class="fa-solid fa-border-all text-lg"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base sm:text-lg font-black text-white tracking-tight">🌐 핀비즈(Finviz) 스타일 글로벌 시장 트리맵</h3>
+                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>실시간 시세 연동
+                </span>
+              </div>
+              <p class="text-xs text-slate-300 font-medium mt-0.5">
+                9대 핵심 섹터 시가총액 비중(면적) 분할 · 실시간 등락률 & 다모다란 DCF 저평가율 색상 히트맵 (국내 45선 + 미국 45선)
+              </p>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex items-center space-x-2">
+            <button onclick="loadMarketMap(true)" id="btn-refresh-market-map" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-rotate text-indigo-400" id="icon-refresh-market-map"></i>
+              <span>새로고침</span>
+            </button>
+            <span class="text-[11px] text-slate-400 font-mono hidden sm:inline" id="market-map-last-update">-</span>
+          </div>
+        </div>
+
+        <!-- Controls Toolbar: Market, Metric, View Mode -->
+        <div class="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+          <!-- 1. Market Selector -->
+          <div class="flex items-center space-x-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-500 text-[11px] px-2 font-bold uppercase tracking-wider">시장:</span>
+            <button onclick="setMapMarket('all')" id="btn-map-market-all" class="map-market-btn px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition shadow-sm">
+              🌐 글로벌 통합 (90선)
+            </button>
+            <button onclick="setMapMarket('KR')" id="btn-map-market-kr" class="map-market-btn px-3 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">
+              🇰🇷 국내 주도주 (45선)
+            </button>
+            <button onclick="setMapMarket('US')" id="btn-map-market-us" class="map-market-btn px-3 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium">
+              🇺🇸 미국 주도주 (45선)
+            </button>
+          </div>
+
+          <!-- 2. Color Metric Selector -->
+          <div class="flex items-center space-x-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-500 text-[11px] px-2 font-bold uppercase tracking-wider">색상 지표:</span>
+            <button onclick="setMapMetric('change')" id="btn-map-metric-change" class="map-metric-btn px-3 py-1 rounded-lg bg-emerald-600 text-white font-bold transition shadow-sm flex items-center gap-1">
+              <i class="fa-solid fa-chart-line text-[10px]"></i>
+              <span>당일 등락률 (1D)</span>
+            </button>
+            <button onclick="setMapMetric('dcf')" id="btn-map-metric-dcf" class="map-metric-btn px-3 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium flex items-center gap-1">
+              <i class="fa-solid fa-gem text-[10px] text-amber-400"></i>
+              <span>다모다란 저평가율 (DCF)</span>
+            </button>
+            <button onclick="setMapMetric('rsi')" id="btn-map-metric-rsi" class="map-metric-btn px-3 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium flex items-center gap-1">
+              <i class="fa-solid fa-bolt text-[10px] text-cyan-400"></i>
+              <span>RSI 모멘텀 (14D)</span>
+            </button>
+          </div>
+
+          <!-- 3. View Mode Selector -->
+          <div class="flex items-center space-x-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+            <span class="text-slate-500 text-[11px] px-2 font-bold uppercase tracking-wider">보기:</span>
+            <button onclick="setMapViewMode('split')" id="btn-map-view-split" class="map-view-btn px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold transition shadow-sm" title="트리맵과 섹터 카드를 함께 봅니다">
+              <i class="fa-solid fa-table-columns mr-1"></i>상하 동시
+            </button>
+            <button onclick="setMapViewMode('map')" id="btn-map-view-map" class="map-view-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium" title="트리맵만 크게 봅니다">
+              <i class="fa-solid fa-map mr-1"></i>트리맵만
+            </button>
+            <button onclick="setMapViewMode('cards')" id="btn-map-view-cards" class="map-view-btn px-2.5 py-1 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition font-medium" title="섹터 상세 카드만 봅니다">
+              <i class="fa-solid fa-id-card mr-1"></i>카드만
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINVIZ TREEMAP WRAPPER -->
+      <div id="finviz-treemap-section" class="space-y-3">
+        <!-- Interactive Canvas Card -->
+        <div class="glass-panel p-3 sm:p-4 border border-slate-800 relative shadow-2xl overflow-hidden rounded-2xl">
+          <!-- Loading Overlay -->
+          <div id="market-map-loading" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-30 flex items-center justify-center">
+            <div class="text-center space-y-2">
+              <div class="inline-block w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-xs text-slate-300 font-medium">글로벌 주도주 시세 및 시가총액 맵 계산 중...</p>
+            </div>
+          </div>
+
+          <!-- The Treemap Canvas Container (Absolute positioned tiles rendered here) -->
+          <div id="finviz-treemap-canvas" class="relative w-full h-[580px] sm:h-[640px] rounded-xl overflow-hidden bg-slate-950 select-none">
+            <!-- Dynamically populated squarified sector & stock tiles -->
+          </div>
+
+          <!-- Bottom Bar: Legend & User Guide -->
+          <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <!-- Dynamic Legend Scale -->
+            <div class="flex items-center space-x-2" id="finviz-legend-container">
+              <!-- Dynamically updated based on metric -->
+            </div>
+
+            <!-- Hint text -->
+            <div class="text-[11px] text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-lightbulb text-amber-400"></i>
+              <span>사각형 크기는 <strong>시가총액</strong> 비례 · 종목 클릭 시 <strong>프로 차트 분석</strong>으로 즉시 이동합니다.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTORS CARDS SECTION (Filter Bar + Cards Grid) -->
+      <div id="sectors-cards-section" class="space-y-6">
+        <!-- Filter Bar -->
+        <div class="glass-panel p-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-filter text-indigo-400"></i>
+            <span class="text-xs sm:text-sm font-bold text-white">매크로 변수 시나리오 필터</span>
+          </div>
+          
+          <div class="flex flex-wrap gap-2 text-xs">
+            <button onclick="filterSectors('all')" class="sector-filter-btn px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-medium">전체 섹터 (9대)</button>
+            <button onclick="filterSectors('power')" class="sector-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-amber-300 hover:bg-slate-700 font-medium"><i class="fa-solid fa-bolt mr-1 text-amber-400"></i>AI 전력망·원전 수혜</button>
+            <button onclick="filterSectors('interest_cut')" class="sector-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium">금리 인하 수혜 (빅테크/바이오)</button>
+            <button onclick="filterSectors('fx_weak')" class="sector-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium">고환율 수출 수혜 (반도체/자동차/방산/전력)</button>
+            <button onclick="filterSectors('oil_high')" class="sector-filter-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium">고유가 수혜 (정유/화학/에너지/원전)</button>
+          </div>
+        </div>
+
+        <!-- Sectors Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="sectors-cards-container">
+          <!-- Dynamically injected from damodaran_sectors.json -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 4: CUSTOM DAMODARAN DCF CALCULATOR (SANDBOX)                        -->
+    <!-- ======================================================================= -->
+    <section id="view-calculator" class="tab-view hidden space-y-6">
+      <div class="glass-panel p-6 border-l-4 border-l-purple-500">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
+              <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-black text-white tracking-tight">다모다란 1초 초간편 DCF 가치평가 & 매도 타이밍 분석</h3>
+              <p class="text-xs text-purple-300 font-medium">✨ 종목명과 내 매수단가만 넣으면 공시 재무제표 & 증권사 리포트 100% 자동 연동</p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-bold bg-purple-950 border border-purple-500/40 text-purple-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-check-double text-emerald-400"></i>공시 & 리포트 자동 연동 모드
+          </span>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-3xl leading-relaxed">
+          복잡한 재무제표 입력 없이 <strong>[종목명]</strong>과 <strong>[내 매수단가]</strong>만 입력하세요. 금융감독원 DART/FnGuide 공시 연간 매출, 영업이익률, 부채비율, 발행주식수와 증권사 애널리스트 리포트 컨센서스를 실시간으로 자동 분석하여 <strong>다모다란 교수의 DCF 적정가와 매도 타이밍(신호등)</strong>을 즉시 산출해 드립니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Input Form (5 Cols) -->
+        <div class="lg:col-span-5 glass-panel p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h4 class="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[11px] font-black">1</span>
+              <span>초간편 종목 & 매수가 입력</span>
+            </h4>
+            <span class="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+              <i class="fa-solid fa-bolt text-emerald-400"></i>실시간 자동 감지
+            </span>
+          </div>
+
+          <!-- Quick Preset Chips -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-300 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-fire text-amber-400 text-xs"></i>자주 찾는 종목 1초 자동 완성:
+              </span>
+              <span class="text-[10px] text-slate-400">클릭 시 전체 공시 자동 연동</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <button type="button" onclick="selectCalcQuickPreset('SK하이닉스')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-purple-600 text-slate-200 border border-slate-700 hover:border-purple-400 transition font-medium">SK하이닉스</button>
+              <button type="button" onclick="selectCalcQuickPreset('삼성전자')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-purple-600 text-slate-200 border border-slate-700 hover:border-purple-400 transition font-medium">삼성전자</button>
+              <button type="button" onclick="selectCalcQuickPreset('현대차')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-purple-600 text-slate-200 border border-slate-700 hover:border-purple-400 transition font-medium">현대차</button>
+              <button type="button" onclick="selectCalcQuickPreset('NAVER')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-purple-600 text-slate-200 border border-slate-700 hover:border-purple-400 transition font-medium">NAVER</button>
+              <button type="button" onclick="selectCalcQuickPreset('카카오')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-purple-600 text-slate-200 border border-slate-700 hover:border-purple-400 transition font-medium">카카오</button>
+              <button type="button" onclick="selectCalcQuickPreset('셀트리온')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-purple-600 text-slate-200 border border-slate-700 hover:border-purple-400 transition font-medium">셀트리온</button>
+              <button type="button" onclick="selectCalcQuickPreset('HD현대일렉트릭')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-amber-600 text-amber-300 border border-slate-700 hover:border-amber-400 transition font-medium">⚡HD현대일렉트릭</button>
+              <button type="button" onclick="selectCalcQuickPreset('두산에너빌리티')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-amber-600 text-amber-300 border border-slate-700 hover:border-amber-400 transition font-medium">⚡두산에너빌리티</button>
+              <button type="button" onclick="selectCalcQuickPreset('NVDA')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-blue-600 text-slate-200 border border-slate-700 hover:border-blue-400 transition font-medium">NVIDIA (US)</button>
+              <button type="button" onclick="selectCalcQuickPreset('AAPL')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-blue-600 text-slate-200 border border-slate-700 hover:border-blue-400 transition font-medium">Apple (US)</button>
+              <button type="button" onclick="selectCalcQuickPreset('TSLA')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-blue-600 text-slate-200 border border-slate-700 hover:border-blue-400 transition font-medium">Tesla (US)</button>
+            </div>
+          </div>
+
+          <!-- The 2 Core Inputs -->
+          <div class="space-y-3 pt-1">
+            <!-- Input 1: Stock Name / Ticker -->
+            <div class="bg-slate-950/60 p-3 rounded-xl border border-purple-500/30 focus-within:border-purple-500 transition shadow-inner">
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="calc-name" class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-magnifying-glass text-purple-400"></i>
+                  <span>종목명 또는 종목코드 (한글 or 코드)</span>
+                </label>
+                <span id="calc-autofill-indicator" class="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <i class="fa-solid fa-circle-check"></i>공시 연동 준비완료
+                </span>
+              </div>
+              <div class="relative">
+                <input type="text" id="calc-name" value="" placeholder="종목명 입력 (예: 삼성전자, 알테오젠, SK하이닉스, NVDA)" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 pl-3 pr-20 text-white font-bold text-sm tracking-wide focus:outline-none focus:border-purple-500 transition-all duration-200" onkeydown="handleCalcNameKeyDown(event)" oninput="handleCalcNameInput(this.value)" onchange="handleCalcNameChange(this.value)" />
+                <button type="button" id="calc-search-btn" onclick="triggerStockAutofill()" class="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-md bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 transition shadow">
+                  <i class="fa-solid fa-bolt text-[11px]" id="calc-search-btn-icon"></i><span id="calc-search-btn-text">조회</span>
+                </button>
+              </div>
+              <span class="text-[10px] text-slate-400 block mt-1">
+                ※ 종목명을 입력하고 <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-600 text-amber-300 font-mono font-bold">Enter</kbd>를 누르면 즉시 실시간 시세와 사업보고서 공시가 자동 연동됩니다.
+              </span>
+            </div>
+
+            <!-- Input 2: My Buy Price (1 Share) -->
+            <div class="bg-indigo-950/20 p-3 rounded-xl border border-indigo-500/40 focus-within:border-indigo-400 transition shadow-inner">
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="calc-buy-price" class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-coins text-amber-400"></i>
+                  <span>내 매수 단가 (1주당 평단가)</span>
+                </label>
+                <button type="button" onclick="setBuyPriceToCurrent()" class="text-[10px] text-indigo-400 hover:text-indigo-300 underline font-medium">
+                  현재가로 입력
+                </button>
+              </div>
+              <div class="relative flex items-center">
+                <span id="calc-currency-symbol" class="absolute left-3 font-mono font-bold text-indigo-400 text-sm">₩</span>
+                <input type="number" id="calc-buy-price" value="" step="any" placeholder="매수단가 입력 (미입력 시 현재가 90% 자동)" class="w-full bg-slate-900 border border-indigo-500/50 rounded-lg py-2.5 pl-8 pr-3 text-white font-mono font-extrabold text-base focus:outline-none focus:border-indigo-400 transition-all duration-200" onkeydown="handleCalcBuyPriceKeyDown(event)" oninput="handleBuyPriceInput()" />
+              </div>
+              <div class="flex items-center justify-between mt-1 text-[10px] text-slate-400">
+                <span>※ 매수 단가 기준으로 1주당 손익률 및 매도 분할 비율을 자동 계산합니다.</span>
+                <span id="calc-curr-price-hint" class="text-slate-300 font-mono">실시간 시세 연동 대기</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main CTA Run Button -->
+          <button type="button" onclick="runCustomDcfSimulation()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:opacity-95 text-white font-black text-sm shadow-xl shadow-purple-600/30 transition transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-chart-line text-base"></i>
+            <span>다모다란 적정가 & 매도 타이밍 분석하기</span>
+          </button>
+
+          <!-- Live Financial Intel Card (공시 & 리포트 자동 추출 현황 카드) -->
+          <div id="calc-intel-card" class="bg-gradient-to-b from-slate-900/90 to-slate-950/90 p-3.5 rounded-xl border border-slate-700/80 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-file-invoice-dollar text-emerald-400"></i>
+                <span id="intel-stock-title">실시간 공시 & 리포트 연동 대기</span>
+              </span>
+              <span id="intel-source-badge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 font-semibold">
+                네이버 금융 DART/FnGuide
+              </span>
+            </div>
+
+            <!-- Sector Specific Model Tag -->
+            <div id="intel-sector-row" class="hidden p-2 rounded-lg bg-purple-950/40 border border-purple-500/30 flex items-center justify-between text-xs">
+              <span class="text-purple-300 font-bold flex items-center gap-1.5 text-[11px]">
+                <i class="fa-solid fa-layer-group text-purple-400"></i>
+                <span id="intel-sector-badge">섹터 특화 가치평가 모델 연동됨</span>
+              </span>
+              <span id="intel-sector-type" class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold">
+                바이오/신약 rNPV
+              </span>
+            </div>
+
+            <!-- Grid of 6 Key Extracted Metrics -->
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">실시간 현재 시장가</span>
+                <span class="font-mono font-bold text-white text-sm" id="intel-curr-price">-</span>
+                <span class="text-[9px] text-slate-400 block mt-0.5" id="intel-price-status">● 종목 조회 시 연동</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">공시 총 발행주식수</span>
+                <span class="font-mono font-bold text-purple-300 text-sm" id="intel-shares">-</span>
+                <span class="text-[9px] text-slate-400 block mt-0.5" id="intel-shares-desc">사업보고서 보통주 기준</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">공시 기준 연매출</span>
+                <span class="font-mono font-bold text-white text-sm" id="intel-revenue">-</span>
+                <span class="text-[9px] text-slate-400 block mt-0.5" id="intel-revenue-desc">최근 결산 실적</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">공시 EBIT 영업이익률</span>
+                <span class="font-mono font-bold text-emerald-400 text-sm" id="intel-margin">-</span>
+                <span class="text-[9px] text-slate-400 block mt-0.5" id="intel-margin-desc">FnGuide 결산 공시</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">증권사 리포트 목표가</span>
+                <span class="font-mono font-bold text-amber-300 text-sm" id="intel-consensus">-</span>
+                <span class="text-[9px] text-slate-400 block mt-0.5" id="intel-consensus-desc">애널리스트 평균 컨센서스</span>
+              </div>
+              <div class="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">무위험 국채 10년물 금리</span>
+                <span class="font-mono font-bold text-indigo-300 text-sm" id="intel-rf">3.28%</span>
+                <span class="text-[9px] text-indigo-400/80 block mt-0.5" id="intel-rf-desc">한국은행 실시간 연동</span>
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-tight">
+              💡 위 공시 데이터는 다모다란 교수의 공식 2단계 FCFF DCF 계산식에 100% 자동 주입되어 1주당 공정 가치로 산출됩니다.
+            </p>
+          </div>
+
+          <!-- Collapsible Section: Advanced Override Mode (전문가 모드) -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden">
+            <button type="button" onclick="toggleCalcAdvancedSettings()" class="w-full p-2.5 bg-slate-900/90 hover:bg-slate-800/90 flex items-center justify-between text-xs text-slate-300 font-bold transition">
+              <span class="flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders text-purple-400"></i>
+                <span>⚙️ 세부 공시/가정치 직접 미세조정 (전문가 모드)</span>
+              </span>
+              <span id="advanced-toggle-icon" class="text-slate-400 text-[10px]">펼치기 ▼</span>
+            </button>
+            <div id="calc-advanced-section" class="hidden p-3 bg-slate-950/80 space-y-3 text-xs border-t border-slate-800">
+              <p class="text-[11px] text-slate-400">
+                기본 공시 값 대신 나만의 미래 성장률이나 마진 시나리오를 직접 시뮬레이션할 수 있습니다.
+              </p>
+              
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">시장 구분</label>
+                  <select id="calc-market" onchange="handleCalcMarketChange(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white">
+                    <option value="KR" selected>국내 (KRW - ₩)</option>
+                    <option value="US">미국 (USD - $)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">현재 시장가 (1주당)</label>
+                  <input type="number" id="calc-curr-price" value="186700" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono" onchange="runCustomDcfSimulation()" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">총 발행주식수 (백만 주, M)</label>
+                  <input type="number" id="calc-shares" value="728.0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono" onchange="runCustomDcfSimulation()" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">기준 연매출 (십억원 or M$)</label>
+                  <input type="number" id="calc-revenue" value="97146.7" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono" onchange="runCustomDcfSimulation()" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">향후 5년 연평균 성장률 (%)</label>
+                  <input type="number" id="calc-growth" value="14.0" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono" onchange="runCustomDcfSimulation()" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">목표 EBIT 영업이익률 (%)</label>
+                  <input type="number" id="calc-margin" value="48.6" step="0.5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono" onchange="runCustomDcfSimulation()" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-400 mb-1">다모다란 무부채 베타 (β)</label>
+                  <input type="number" id="calc-beta" value="1.15" step="0.05" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono" onchange="runCustomDcfSimulation()" />
+                </div>
+                <div>
+                  <label class="block text-slate-400 mb-1">부채비율 (D/E %)</label>
+                  <input type="number" id="calc-de" value="25.0" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono" onchange="runCustomDcfSimulation()" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">무위험 국채 10년물 금리 (Rf %)</label>
+                <input type="number" id="calc-rf" value="3.28" step="0.01" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white font-mono text-amber-400 font-bold" onchange="runCustomDcfSimulation()" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Output Result (7 Cols) -->
+        <div class="lg:col-span-7 glass-panel p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h4 class="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[11px] font-black">2</span>
+              <span>다모다란 가치평가 결과 및 매도 나침반</span>
+            </h4>
+            <span id="calc-last-updated" class="text-[11px] text-slate-400 font-mono">자동 계산 완료</span>
+          </div>
+          
+          <div id="calc-result-container" class="space-y-4">
+            <div class="p-8 text-center text-slate-500 text-xs">
+              종목명과 매수단가를 입력하시면 다모다란 DCF 내재가치와 매도 신호등이 즉시 분석됩니다.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 5: PROFESSIONAL CHART ANALYSIS & BUY/SELL TIMING NAVIGATOR          -->
+    <!-- ======================================================================= -->
+    <section id="view-chart" class="tab-view hidden space-y-6">
+      
+      <!-- Top Title & Search Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <i class="fa-solid fa-chart-candlestick mr-1"></i>PRO ANALYST ENGINE
+            </span>
+            <span class="text-[11px] text-slate-400 font-mono">네이버 증권 110일 일봉 데이터 실시간 연동</span>
+          </div>
+          <h2 class="text-lg sm:text-xl font-black text-white mt-1">
+            📊 최고 애널리스트 차트 분석 & 매수·매도 타이밍 나침반
+          </h2>
+          <p class="text-xs text-slate-300 mt-0.5">
+            20일 생명선(눌림목 매수 타점) · 60일 수급선(추세 지지선) · 볼린저밴드(20,2) · RSI/MACD 다이버전스 결합 실전 타이밍
+          </p>
+        </div>
+
+        <!-- Search Bar & Query Controls -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+          <div class="relative flex-1 sm:w-72">
+            <input type="text" id="chart-search-input" value="SK하이닉스" placeholder="종목명 또는 티커 (예: SK하이닉스, 000660, NVDA)" 
+              onkeydown="if(event.key==='Enter') loadChartAnalysis()"
+              class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-inner" />
+            <span class="absolute right-3 top-2.5 text-slate-500 text-xs pointer-events-none">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </span>
+          </div>
+          <button onclick="loadChartAnalysis()" id="btn-run-chart-analysis" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-1.5 transition active:scale-95 whitespace-nowrap">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+            <span>차트 분석 실행</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Preset Stock Pills -->
+      <div class="flex items-center space-x-2 text-xs overflow-x-auto scrollbar-none pb-1">
+        <span class="text-slate-400 font-semibold whitespace-nowrap text-[11px]">⚡ 빠른 종목 분석:</span>
+        <div class="flex items-center space-x-1.5">
+          <button onclick="quickSelectChartStock('SK하이닉스', '000660')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">SK하이닉스</button>
+          <button onclick="quickSelectChartStock('알테오젠', '196170')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">알테오젠</button>
+          <button onclick="quickSelectChartStock('삼성전자', '005930')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">삼성전자</button>
+          <button onclick="quickSelectChartStock('현대차', '005380')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">현대차</button>
+          <button onclick="quickSelectChartStock('에이비엘바이오', '298380')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">에이비엘바이오</button>
+          <button onclick="quickSelectChartStock('카카오', '035720')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">카카오</button>
+          <button onclick="quickSelectChartStock('NAVER', '035420')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">NAVER</button>
+          <button onclick="quickSelectChartStock('HD현대일렉트릭', '267260', 'KR')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-amber-600 border border-slate-800 text-amber-300 text-[11px] font-medium transition whitespace-nowrap">⚡HD현대일렉트릭</button>
+          <button onclick="quickSelectChartStock('두산에너빌리티', '034020', 'KR')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-amber-600 border border-slate-800 text-amber-300 text-[11px] font-medium transition whitespace-nowrap">⚡두산에너빌리티</button>
+          <button onclick="quickSelectChartStock('컨스텔레이션에너지', 'CEG', 'US')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-blue-600 border border-slate-800 text-blue-300 text-[11px] font-medium transition whitespace-nowrap">⚡CEG (원전·US)</button>
+          <button onclick="quickSelectChartStock('NVDA', 'NVDA', 'US')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">NVIDIA (US)</button>
+          <button onclick="quickSelectChartStock('TSLA', 'TSLA', 'US')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">Tesla (US)</button>
+          <button onclick="quickSelectChartStock('AAPL', 'AAPL', 'US')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-slate-200 text-[11px] font-medium transition whitespace-nowrap">Apple (US)</button>
+        </div>
+      </div>
+
+      <!-- Real-Time Technical Diagnosis Summary Card -->
+      <div id="chart-diagnosis-banner" class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        
+        <!-- Header Info Row -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+          
+          <!-- Stock Identity & Real-Time Price -->
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-lg">
+              <i class="fa-solid fa-arrow-trend-up"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="text-lg font-black text-white tracking-tight" id="chart-stock-name">SK하이닉스</h3>
+                <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono font-semibold" id="chart-stock-code">000660 · KOSPI</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 font-bold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  실시간 연동
+                </span>
+              </div>
+              <div class="flex items-baseline space-x-3 mt-1">
+                <span class="text-2xl font-black font-mono text-white" id="chart-stock-price">₩1,868,000</span>
+                <span class="text-sm font-bold font-mono text-emerald-400" id="chart-stock-change">▲ +11,000 (+0.59%)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Signal Badge & Composite Technical Score -->
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Strategic Signal Badge -->
+            <div class="px-4 py-2.5 rounded-xl border flex items-center space-x-2.5 shadow-lg" id="chart-signal-badge-container">
+              <span class="w-2.5 h-2.5 rounded-full" id="chart-signal-dot"></span>
+              <div>
+                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">기관 차트 타이밍 진단</span>
+                <span class="text-sm font-black text-white" id="chart-signal-badge-text">20일선 눌림목 매수 찬스</span>
+              </div>
+            </div>
+
+            <!-- Technical Score Gauge Box -->
+            <div class="bg-slate-950 border border-slate-800 px-4 py-2 rounded-xl flex items-center space-x-3">
+              <div>
+                <span class="text-[10px] text-slate-400 font-medium block">기술적 종합 점수</span>
+                <div class="flex items-baseline space-x-1">
+                  <span class="text-xl font-black font-mono text-indigo-400" id="chart-score-val">73</span>
+                  <span class="text-[11px] text-slate-500 font-mono">/ 100점</span>
+                </div>
+              </div>
+              <div class="w-16 h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div id="chart-score-bar" class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width: 73%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actionable Headline & Analyst Commentary -->
+        <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-1.5">
+          <div class="flex items-center space-x-2 text-xs font-bold text-amber-300">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span id="chart-headline-text">20일선 부근 횡보 박스권 지지 확인 중</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed" id="chart-guidance-text">
+            현재 주가가 20일 이동평균선에 근접하여 강력한 눌림목 지지를 테스트하고 있습니다. 60일 수급선이 우상향을 유지하는 한 20일선 분할 매수가 유효하며, 볼린저 상단 도달 시 1차 분할 익절을 권장합니다.
+          </p>
+        </div>
+
+        <!-- 4 Key Price Execution Highlights -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+          <!-- Buy Entry -->
+          <div class="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-3 space-y-1">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-emerald-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-crosshairs text-emerald-400"></i> 눌림목 매수가
+              </span>
+              <span class="text-[10px] text-emerald-500 font-mono">MA20 ±1.5%</span>
+            </div>
+            <div class="text-base sm:text-lg font-black font-mono text-emerald-300" id="chart-lvl-pullback">₩1,735,200</div>
+            <p class="text-[10px] text-slate-400">생명선(20MA) 지지 확인 매수 타점</p>
+          </div>
+
+          <!-- Stop Loss -->
+          <div class="bg-rose-950/20 border border-rose-500/30 rounded-xl p-3 space-y-1">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-rose-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-shield text-rose-400"></i> 손절 기준가
+              </span>
+              <span class="text-[10px] text-rose-500 font-mono">MA60 -3%</span>
+            </div>
+            <div class="text-base sm:text-lg font-black font-mono text-rose-300" id="chart-lvl-stoploss">₩1,718,560</div>
+            <p class="text-[10px] text-slate-400">수급선(60MA) 이탈 시 리스크 관리</p>
+          </div>
+
+          <!-- Target 1 -->
+          <div class="bg-amber-950/20 border border-amber-500/30 rounded-xl p-3 space-y-1">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-amber-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-flag-checkered text-amber-400"></i> 1차 목표가
+              </span>
+              <span class="text-[10px] text-amber-500 font-mono">볼린저 상단</span>
+            </div>
+            <div class="text-base sm:text-lg font-black font-mono text-amber-300" id="chart-lvl-target1">₩1,899,600</div>
+            <p class="text-[10px] text-slate-400">단기 과열권 30~50% 분할 익절</p>
+          </div>
+
+          <!-- Target 2 / DCF Fair Value -->
+          <div class="bg-indigo-950/20 border border-indigo-500/30 rounded-xl p-3 space-y-1">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-indigo-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-gem text-indigo-400"></i> 2차 목표 / 적정가
+              </span>
+              <span class="text-[10px] text-indigo-500 font-mono">DCF/신고가</span>
+            </div>
+            <div class="text-base sm:text-lg font-black font-mono text-indigo-300" id="chart-lvl-target2">₩1,946,700</div>
+            <p class="text-[10px] text-slate-400">추세 지속 시 전량 목표치 달성</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Main Interactive Chart Container -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        
+        <!-- Chart Controls Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <!-- Timeframe Buttons -->
+          <div class="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            <span class="text-[11px] text-slate-400 px-2 font-medium">조회 기간:</span>
+            <button onclick="setChartTimeframe(20)" id="tf-btn-20" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">1개월 (20봉)</button>
+            <button onclick="setChartTimeframe(60)" id="tf-btn-60" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">3개월 (60봉)</button>
+            <button onclick="setChartTimeframe(110)" id="tf-btn-110" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold transition">전체 (110봉)</button>
+          </div>
+
+          <!-- Indicator Layer Toggles -->
+          <div class="flex flex-wrap items-center gap-3 text-xs">
+            <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white">
+              <input type="checkbox" id="toggle-bollinger" checked onchange="updateMainChartLayers()" class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500" />
+              <span class="text-[11px] font-medium">볼린저 밴드(20,2)</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white">
+              <input type="checkbox" id="toggle-mas" checked onchange="updateMainChartLayers()" class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500" />
+              <span class="text-[11px] font-medium">이평선 (5·20·60·120)</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-amber-300 hover:text-amber-200">
+              <input type="checkbox" id="toggle-dcf-overlay" onchange="updateMainChartLayers()" class="rounded bg-slate-950 border-amber-600 text-amber-500 focus:ring-amber-500" />
+              <span class="text-[11px] font-bold">✨ 다모다란 DCF 적정가 오버레이</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Main Price Chart Canvas -->
+        <div class="relative w-full h-[360px] sm:h-[400px]">
+          <canvas id="chart-main-canvas"></canvas>
+          <div id="chart-loading-spinner" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center rounded-xl hidden">
+            <div class="flex items-center space-x-2 text-indigo-400 font-bold text-sm">
+              <i class="fa-solid fa-spinner fa-spin text-lg"></i>
+              <span>네이버 캔들 및 지표 로딩 중...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-Chart Mode Switcher Tabs -->
+        <div class="flex items-center justify-between border-t border-slate-800 pt-3">
+          <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            <button onclick="setSubChartMode('volume')" id="sub-btn-volume" class="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition">
+              <i class="fa-solid fa-chart-column mr-1"></i>거래량 (Volume)
+            </button>
+            <button onclick="setSubChartMode('macd')" id="sub-btn-macd" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">
+              <i class="fa-solid fa-wave-square mr-1"></i>MACD (12,26,9)
+            </button>
+            <button onclick="setSubChartMode('rsi')" id="sub-btn-rsi" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">
+              <i class="fa-solid fa-gauge mr-1"></i>RSI (14)
+            </button>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono hidden sm:inline" id="sub-chart-stat-label">거래량 & 20일 거래량 이평선</span>
+        </div>
+
+        <!-- Sub Indicator Canvas -->
+        <div class="relative w-full h-[160px] sm:h-[180px]">
+          <canvas id="chart-sub-canvas"></canvas>
+        </div>
+
+      </div>
+
+      <!-- 4 Professional Analytical Pillars Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Pillar 1: Moving Averages & Disparity -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg space-y-3">
+          <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
+            <span class="w-6 h-6 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xs font-bold">1</span>
+            <h4 class="text-xs font-bold text-slate-200">이평선 정배열 & 이격도</h4>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">배열 상태</span>
+              <span class="font-bold text-white font-mono" id="pillar-alignment">정배열 (우상향)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">20일선 이격도</span>
+              <span class="font-bold font-mono text-emerald-400" id="pillar-disparity20">107.6% (안정)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">60일선 수급 지지</span>
+              <span class="font-bold font-mono text-indigo-300" id="pillar-disparity60">+2.8% 상회</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">크로스 신호</span>
+              <span class="font-bold text-amber-300" id="pillar-cross">골든크로스 지속</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 bg-slate-950 p-2 rounded-lg leading-relaxed" id="pillar-desc-ma">
+            주가가 20일선(생명선)과 60일선(수급선) 위에서 지지를 받으며 전형적인 기관 매수 우위 정배열 추세입니다.
+          </p>
+        </div>
+
+        <!-- Pillar 2: Bollinger Bands Volatility -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg space-y-3">
+          <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
+            <span class="w-6 h-6 rounded-lg bg-amber-600/20 text-amber-400 flex items-center justify-center text-xs font-bold">2</span>
+            <h4 class="text-xs font-bold text-slate-200">볼린저 밴드(20,2) 변동성</h4>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">밴드 상태</span>
+              <span class="font-bold text-white" id="pillar-bb-status">밴드 확장 진행 중</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">상단 저항선</span>
+              <span class="font-bold font-mono text-rose-400" id="pillar-bb-upper">₩1,899,600</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">중심선 (20MA)</span>
+              <span class="font-bold font-mono text-emerald-400" id="pillar-bb-mid">₩1,735,200</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">하단 지지선</span>
+              <span class="font-bold font-mono text-indigo-400" id="pillar-bb-lower">₩1,570,800</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 bg-slate-950 p-2 rounded-lg leading-relaxed" id="pillar-desc-bb">
+            밴드 중심선(20일선)을 강하게 지지받고 있으며 상단 저항선 터치 시 1차 분할 차익실현 포인트가 도래합니다.
+          </p>
+        </div>
+
+        <!-- Pillar 3: RSI & MACD Momentum -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg space-y-3">
+          <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
+            <span class="w-6 h-6 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xs font-bold">3</span>
+            <h4 class="text-xs font-bold text-slate-200">모멘텀 & 다이버전스</h4>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">RSI(14) 지수</span>
+              <span class="font-bold font-mono text-emerald-400" id="pillar-rsi-val">58.1 (적정 매수권)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">RSI 상태</span>
+              <span class="font-bold text-white" id="pillar-rsi-state">중립 안정 (과열 없음)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">MACD 오실레이터</span>
+              <span class="font-bold font-mono text-indigo-300" id="pillar-macd-hist">+16,960 (양봉 확장)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">다이버전스</span>
+              <span class="font-bold text-slate-300" id="pillar-divergence">정상 추세 추종</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 bg-slate-950 p-2 rounded-lg leading-relaxed" id="pillar-desc-momentum">
+            RSI가 70 미만으로 과열 부담이 없으며 MACD 히스토그램이 양의 영역에서 우상향하여 추가 상승 에너지를 확보했습니다.
+          </p>
+        </div>
+
+        <!-- Pillar 4: Volume & Institutional Flow -->
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-lg space-y-3">
+          <div class="flex items-center space-x-2 border-b border-slate-800 pb-2">
+            <span class="w-6 h-6 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center text-xs font-bold">4</span>
+            <h4 class="text-xs font-bold text-slate-200">거래량 & 수급 강도</h4>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">20일 평균 대비</span>
+              <span class="font-bold font-mono text-white" id="pillar-vol-ratio">0.77배 (수렴)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">거래량 급증 돌파</span>
+              <span class="font-bold text-amber-400" id="pillar-vol-surge">평균 수준 횡보</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">수급 매집 상태</span>
+              <span class="font-bold text-emerald-400" id="pillar-vol-state">눌림목 거래량 축소</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">돌파 필요 거래량</span>
+              <span class="font-bold font-mono text-indigo-300" id="pillar-vol-needed">평균의 1.8배 이상</span>
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400 bg-slate-950 p-2 rounded-lg leading-relaxed" id="pillar-desc-volume">
+            눌림목 조정 시 거래량이 건강하게 감소하는 '거래량 축소 눌림' 패턴입니다. 향후 전고점 돌파 시 대량 거래가 필수적입니다.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Professional Analyst Strategy Playbook Reference Table -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <h4 class="text-xs sm:text-sm font-bold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-graduation-cap text-indigo-400"></i>
+            <span>최고의 애널리스트·트레이더 실전 매수/매도 기법 총정리</span>
+          </h4>
+          <span class="text-[11px] text-slate-500">기관 트레이딩 데스크 표준 가이드</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                <th class="p-3 font-semibold">지표 / 분석 기법</th>
+                <th class="p-3 font-semibold">애널리스트 핵심 의미</th>
+                <th class="p-3 font-semibold text-emerald-400">🎯 최적 매수 타이밍 (Buy Signal)</th>
+                <th class="p-3 font-semibold text-rose-400">🚨 매도 / 손절 타이밍 (Sell Signal)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 font-bold text-white">20일 이동평균선 (생명선)</td>
+                <td class="p-3 text-slate-400">한 달간(20영업일) 참여자 평균 단가. 주가의 단기 방향 결정선</td>
+                <td class="p-3 text-emerald-300">상승 추세 중 주가가 20일선에 터치 후 양봉 반등 (눌림목 매수)</td>
+                <td class="p-3 text-rose-300">20일선 하향 돌파 후 3일 내 회복 실패 시 단기 비중 축소</td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 font-bold text-white">60일 이동평균선 (수급선)</td>
+                <td class="p-3 text-slate-400">분기(3개월) 기관·외인 대규모 펀드 자금의 유출입 기준선</td>
+                <td class="p-3 text-emerald-300">60일선 우상향 확인 + 20일선이 60일선 상향 돌파 (골든크로스)</td>
+                <td class="p-3 text-rose-300">60일선 -3% 이상 이탈 (기관 수급 붕괴로 추세 반전 손절)</td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 font-bold text-white">볼린저 밴드 (20, 2)</td>
+                <td class="p-3 text-slate-400">통계학적 95.4% 확률 밴드. 수축(Squeeze) 후 급변동 발생</td>
+                <td class="p-3 text-emerald-300">밴드 폭 수축 후 중심선(20MA) 지지 받으며 상단 밴드 뚫을 때</td>
+                <td class="p-3 text-rose-300">주가가 상단 밴드를 벗어난 후 밴드 안으로 재진입할 때 (1차 익절)</td>
+              </tr>
+              <tr class="hover:bg-slate-800/30">
+                <td class="p-3 font-bold text-white">RSI (14) & 다이버전스</td>
+                <td class="p-3 text-slate-400">주가의 상대 강도(모멘텀). 추세와 지표의 엇갈림(다이버전스) 감지</td>
+                <td class="p-3 text-emerald-300">주가는 신저가이나 RSI 저점이 상승할 때 (상승 다이버전스)</td>
+                <td class="p-3 text-rose-300">RSI 70~80 돌파 후 하락 꺾임 or 하락 다이버전스 (강력 매도)</td>
+              </tr>
+              <tr class="hover:bg-slate-800/30 bg-indigo-950/20">
+                <td class="p-3 font-bold text-indigo-300">다모다란 DCF + 차트 융합</td>
+                <td class="p-3 text-slate-400">펀더멘털 내재가치와 기술적 타이밍의 환상적 시너지</td>
+                <td class="p-3 text-indigo-200">DCF 적정가 대비 -15% 저평가 상태 + 차트 20일선 눌림목 반등</td>
+                <td class="p-3 text-amber-300">DCF 적정가 초과 달성 + 볼린저 상단 터치 시 50% 분할 익절</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- 4. MODAL: ADD / EDIT STOCK                                                -->
+  <!-- ========================================================================= -->
+  <div id="add-stock-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 text-slate-100 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-plus-circle text-indigo-400 text-lg"></i>
+          <h3 class="font-bold text-base text-white">내 매수 종목 등록 (다모다란 분석)</h3>
+        </div>
+        <button onclick="closeAddStockModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Quick Preset Buttons -->
+      <div class="space-y-1.5">
+        <span class="text-xs text-slate-400 font-semibold">⚡ 빠른 선택 (종목 클릭 시 기본 데이터 자동 채움):</span>
+        <div class="flex flex-wrap gap-1.5 text-xs">
+          <button type="button" onclick="fillPreset('samsung')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition">삼성전자</button>
+          <button type="button" onclick="fillPreset('skhynix')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition">SK하이닉스</button>
+          <button type="button" onclick="fillPreset('hyundai')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition">현대차</button>
+          <button type="button" onclick="fillPreset('nvda')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition">NVIDIA (US)</button>
+          <button type="button" onclick="fillPreset('apple')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition">Apple (US)</button>
+          <button type="button" onclick="fillPreset('tesla')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-indigo-600 text-slate-200 transition">Tesla (US)</button>
+        </div>
+      </div>
+
+      <!-- Form Inputs -->
+      <form id="add-stock-form" onsubmit="handleSaveStock(event)" class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">시장</label>
+            <select id="form-market" onchange="handleMarketChange(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white">
+              <option value="KR">국내 (KOSPI/KOSDAQ - ₩)</option>
+              <option value="US">미국 (NYSE/NASDAQ - $)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">산업 섹터 (다모다란 벤치마크)</label>
+            <select id="form-sector" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white">
+              <option value="semiconductor">반도체 & 하드웨어</option>
+              <option value="software_ai">인터넷·소프트웨어 & 빅테크</option>
+              <option value="auto_mobility">자동차 & 모빌리티</option>
+              <option value="banking_finance">은행 & 금융지주</option>
+              <option value="battery_cleanenergy">2차전지 & 친환경</option>
+              <option value="biotech_pharma">바이오 & 제약</option>
+              <option value="energy_chemical">정유·화학 & 에너지</option>
+              <option value="defense_shipbuilding">방산 & 조선</option>
+              <option value="power_grid">전력 & AI 인프라 / 원전</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">종목명 *</label>
+            <input type="text" id="form-name" required placeholder="예: 삼성전자, 현대차, 카카오" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white" />
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-slate-300 font-medium">티커/종목코드 *</label>
+              <button type="button" onclick="fetchNaverStockPriceForModal()" id="btn-naver-query" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-bold flex items-center transition bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+                <i class="fa-solid fa-bolt mr-1 text-emerald-400"></i>네이버 시세 조회
+              </button>
+            </div>
+            <input type="text" id="form-ticker" onchange="fetchNaverStockPriceForModal()" required placeholder="예: 005930, 000660, NVDA" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-indigo-950/20 p-2.5 rounded-xl border border-indigo-500/30">
+            <label class="block text-indigo-300 font-bold mb-1">내 매수가 (평단가) *</label>
+            <input type="number" id="form-buy-price" required step="any" placeholder="예: 45000" class="w-full bg-slate-950 border border-indigo-500/50 rounded-lg p-2 text-white font-mono text-sm font-bold" />
+          </div>
+          <div class="bg-indigo-950/20 p-2.5 rounded-xl border border-indigo-500/30">
+            <label class="block text-indigo-300 font-bold mb-1">보유 수량 (주) *</label>
+            <input type="number" id="form-quantity" required min="1" placeholder="예: 50" class="w-full bg-slate-950 border border-indigo-500/50 rounded-lg p-2 text-white font-mono text-sm font-bold" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">현재 시장가 (현재가) *</label>
+            <input type="number" id="form-curr-price" required step="any" placeholder="예: 48000" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono text-sm" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">5개년 기대성장률 (%)</label>
+            <input type="number" id="form-growth" step="0.1" value="8.0" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">목표 EBIT 마진 (%)</label>
+            <input type="number" id="form-margin" step="0.1" value="18.0" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono" />
+          </div>
+          <div>
+            <label class="block text-slate-300 font-medium mb-1">RSI(14) 보조지표</label>
+            <input type="number" id="form-rsi" step="0.1" value="55.0" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-medium mb-1">매수 메모 / 투자 아이디어</label>
+          <input type="text" id="form-notes" placeholder="예: 적정가 도달 시 1차 35% 분할 매도 계획" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white" />
+        </div>
+
+        <div class="flex items-start gap-2.5 px-3 py-2 rounded-xl bg-emerald-950/40 border border-emerald-800/40 text-[11px] text-emerald-300/90 leading-relaxed">
+          <i class="fa-solid fa-shield-halved text-emerald-400 mt-0.5 shrink-0"></i>
+          <div><strong class="text-emerald-300">개인정보 안심 보호:</strong> 사용자가 입력하는 매수가, 보유 수량, 목표가, 메모 등 모든 개인 거래 정보는 <strong>본인 PC의 브라우저(Local Storage)에만 100% 저장</strong>되며 외부 서버나 제3자에게 일체 전송되지 않습니다.</div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-800 flex justify-end space-x-3">
+          <button type="button" onclick="closeAddStockModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">취소</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-lg shadow-indigo-600/30">종목 저장 & 분석 실행</button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Finviz Interactive Floating Tooltip -->
+  <div id="finviz-tooltip" class="fixed pointer-events-none z-50 hidden p-3.5 rounded-xl bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md text-xs text-white max-w-xs transition-opacity duration-150">
+    <!-- Content injected via JS -->
+  </div>
+
+  <!-- JavaScript Controller -->
+  <script src="app.js"></script>
+</body>
+</html>
