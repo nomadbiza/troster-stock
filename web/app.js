@@ -1156,13 +1156,20 @@ function jsEvaluateExitTiming(stock, dcf) {
   const sectorId = stock.sector_id || dcf.sector_id || getStockSectorClient(stock.ticker, stock.name);
 
   const rsi = parseFloat(tech.rsi_14 || 50.0);
+  const sma20 = parseFloat(tech.sma_20 || currPrice * 0.98);
   const sma60 = parseFloat(tech.sma_60 || currPrice * 0.95);
+  const bbUpper = parseFloat(tech.bollinger_upper || currPrice * 1.06);
   const baseVal = dcf.base_fair_value;
   const bullishVal = dcf.bullish_value;
 
   const profitPct = buyPrice > 0 ? ((currPrice - buyPrice) / buyPrice * 100.0) : 0;
   const valuationGapPct = baseVal > 0 ? ((currPrice - baseVal) / baseVal * 100.0) : 0;
-  const stopLossPrice = Math.max(buyPrice * 0.92, sma60 * 0.97);
+  
+  // 트레일링 손절가: 수익이 났을 때는 원금을 절대 까먹지 않도록 매수가 위에서 이익 보존선 설정
+  let stopLossPrice = Math.max(buyPrice * 0.92, sma60 * 0.97);
+  if (profitPct >= 8.0) {
+    stopLossPrice = Math.max(buyPrice * 1.03, currPrice * 0.91, sma20 * 0.97);
+  }
 
   // RSI 문구 정확화: 70 미만은 차트 과열이 아님!
   let rsiText = "";
@@ -1182,6 +1189,7 @@ function jsEvaluateExitTiming(stock, dcf) {
   let sharesToSell = 0;
   const sym = currency === "USD" ? "$" : "₩";
 
+  // 1) 손절 / 리스크 오프 조건 (원금 훼손 방지)
   if (currPrice <= stopLossPrice && profitPct < -5.0) {
     signalType = "STOP_LOSS_ALERT";
     signalBadge = "손절 / 리스크 오프 권고";
@@ -1189,27 +1197,53 @@ function jsEvaluateExitTiming(stock, dcf) {
     headline = `손절 기준선(${sym}${Math.round(stopLossPrice).toLocaleString()}) 하향 이탈! 원금 보호 우선`;
     sharesToSell = quantity;
     guidance = `주가가 매수가 대비 ${profitPct.toFixed(1)}% 하락하였으며 주요 지지선을 이탈했습니다. 추가 손실 방지를 위해 전량 손절 또는 비중 70% 축소를 권고합니다.`;
-  } else if (currPrice >= bullishVal && (rsi >= 70.0 || currPrice >= bullishVal * 1.12)) {
+  }
+  // 2) 수익권(+5% 이상)이면서 추세가 견고하고 RSI 과열이 없는 경우 (추세 추종 수익 극대화 - 섣부른 매도 금지!)
+  else if (profitPct >= 5.0 && rsi < 70.0 && (currPrice >= sma20 * 0.98 || currPrice >= sma60 * 0.98)) {
+    signalType = "TREND_RIDE_HOLD";
+    signalBadge = "🚀 수익 극대화 / 추세 지속 (트레일링 익절 홀딩)";
+    sellGaugeScore = 25;
+    sharesToSell = 0;
+    headline = `수익률 +${profitPct.toFixed(1)}% 달성! 20일선 지지 기반 우상향 지속${rsiText}`;
+    guidance = `현재 +${profitPct.toFixed(1)}%의 높은 수익을 기록 중이며, RSI(${rsi.toFixed(1)})가 과열권이 아닌 건강한 상승 추세를 유지하고 있습니다. 섣불리 전량 매도하지 마시고, 트레일링 익절선(${sym}${Math.round(stopLossPrice).toLocaleString()})을 방어선으로 설정하여 1차 목표가까지 수익을 끝까지 극대화하십시오.`;
+  }
+  // 3) 단기 기술적 과열(RSI >= 72) 또는 볼린저 상단 도달 시 (1차 분할 익절)
+  else if (rsi >= 72.0 || (currPrice >= bbUpper && profitPct > 0)) {
+    signalType = "PARTIAL_SELL_1";
+    signalBadge = "⚠️ 1차 분할 익절 권고 (단기 과열권 도달)";
+    sellGaugeScore = 68;
+    sharesToSell = Math.max(1, Math.floor(quantity * 0.35));
+    headline = `단기 기술적 과열${rsiText} 또는 볼린저 상단 도달! 35% 1차 분할 익절 권장`;
+    guidance = `주가가 단기 과열권에 진입했습니다. 보유 수량 ${quantity}주 중 약 35%(${sharesToSell}주)를 1차 분할 매도하여 확정 수익을 챙기시고, 잔여 65%는 20일선 지지를 보며 추세 매매를 이어가십시오.`;
+  }
+  // 4) 극단적 버블 과열 (RSI >= 80) 또는 추세 꺾임 (적극 매도)
+  else if (rsi >= 80.0 || (currPrice >= bullishVal * 1.25 && currPrice < sma20 * 0.98)) {
     signalType = "STRONG_SELL";
     signalBadge = "적극 매도 / 최종 전량 익절";
-    sellGaugeScore = 95;
-    headline = `다모다란 낙관적 상단(${sym}${Math.round(bullishVal).toLocaleString()}) 도달${rsiText}`;
+    sellGaugeScore = 90;
+    headline = `RSI ${rsi.toFixed(1)} 극단적 과열 또는 주요 지지선 꺾임! 최종 전량 익절 권고`;
     sharesToSell = Math.max(1, Math.floor(quantity * 0.7));
-    guidance = `현재 주가는 섹터 특화 내재가치를 ${valuationGapPct > 0 ? '+' : ''}${valuationGapPct.toFixed(1)}% 초과한 고평가 영역입니다. 분할 익절 플랜에 따라 보유 물량의 70~100%를 시장가 분할 청산하십시오.`;
-  } else if (currPrice >= baseVal) {
+    guidance = `차트 과열 지수가 극에 달했거나 지지선 이탈 조짐이 보입니다. 확보된 수익(${profitPct > 0 ? '+' : ''}${profitPct.toFixed(1)}%)을 지키기 위해 보유 물량의 70~100%를 분할 청산하십시오.`;
+  }
+  // 5) 기본 적정가 돌파 구간 (수익률 0~5% 미만인 경우)
+  else if (currPrice >= baseVal) {
     signalType = "PARTIAL_SELL_1";
     signalBadge = "1차 분할 매도 권고 (적정가 도달)";
-    sellGaugeScore = 70;
-    sharesToSell = Math.max(1, Math.floor(quantity * 0.4));
+    sellGaugeScore = 55;
+    sharesToSell = Math.max(1, Math.floor(quantity * 0.35));
     headline = `다모다란 기본 적정가(${sym}${Math.round(baseVal).toLocaleString()}) 돌파!${rsiText}`;
-    guidance = `기업의 섹터 특화 펀더멘털 적정가에 도달했습니다. 보유 수량 ${quantity}주 중 약 40%(${sharesToSell}주)를 1차 분할 매도하여 확정 수익을 확보하고, 잔여 수량은 낙관적 목표가(${Math.round(bullishVal).toLocaleString()})까지 추세 매매를 이어가세요.`;
-  } else if (currPrice >= baseVal * 0.90) {
+    guidance = `기업의 섹터 특화 펀더멘털 적정가에 도달했습니다. 보유 수량 ${quantity}주 중 약 35%(${sharesToSell}주)를 1차 분할 매도하여 확정 수익을 챙기시고, 잔여 수량은 상방 목표가까지 추세 매매를 이어가세요.`;
+  }
+  // 6) 목표가 근접 구간 (90% ~ 100%)
+  else if (currPrice >= baseVal * 0.90) {
     signalType = "APPROACHING_TARGET";
     signalBadge = "목표가 근접 / 매도 준비";
     sellGaugeScore = 48;
     headline = `적정가(${sym}${Math.round(baseVal).toLocaleString()}) 도달 임박 (괴리율 ${valuationGapPct.toFixed(1)}%)${rsiText}`;
     guidance = `적정가 도달이 임박했습니다. 신규 매수는 자제하시고, 목표 가격대에 분할 매도 주문을 미리 걸어두시길 권장합니다.`;
-  } else {
+  }
+  // 7) 저평가 안심 보유 구간
+  else {
     signalType = "SAFE_HOLD";
     sellGaugeScore = Math.max(10, Math.round(35 + (valuationGapPct * 0.5)));
     if (sectorId === "biotech_pharma") {
@@ -1223,9 +1257,69 @@ function jsEvaluateExitTiming(stock, dcf) {
     }
   }
 
-  const step1Target = baseVal;
-  const step2Target = Math.round((baseVal + bullishVal) / 2);
-  const step3Target = bullishVal;
+  // ===========================================================================
+  // 단계별 분할 매도 실행 주문 가이드 (Exit Order Blueprint)
+  // [핵심 원칙] 목표 매도가격은 반드시 [현재 시장가] 및 [내 매수가]보다 높은 미래의 익절 가격이어야 함!
+  // ===========================================================================
+  let step1Target = 0;
+  let step2Target = 0;
+  let step3Target = 0;
+  let cond1 = "";
+  let cond2 = "";
+  let cond3 = "";
+
+  if (profitPct > 0 || currPrice >= baseVal) {
+    // [Case A: 이미 수익 중이거나 적정가를 돌파하여 고수익 상승 중인 강세 종목]
+    // 1차 목표: 현재가 대비 +7% 이상, 볼린저 상단, 매수가 대비 최소 +20%
+    step1Target = Math.max(
+      Math.round(currPrice * 1.07),
+      Math.round(bbUpper),
+      Math.round(baseVal),
+      Math.round(buyPrice * 1.20)
+    );
+    // 2차 목표: 현재가 대비 +16% 이상, 1차 목표가 +8%, 매수가 대비 +45%
+    step2Target = Math.max(
+      Math.round(currPrice * 1.16),
+      Math.round(step1Target * 1.08),
+      Math.round(bullishVal),
+      Math.round(buyPrice * 1.45)
+    );
+    // 3차 목표: 현재가 대비 +28% 이상, 2차 목표가 +10%, 매수가 대비 +70%
+    step3Target = Math.max(
+      Math.round(currPrice * 1.28),
+      Math.round(step2Target * 1.10),
+      Math.round(bullishVal * 1.20),
+      Math.round(buyPrice * 1.70)
+    );
+
+    const p1 = buyPrice > 0 ? ((step1Target - buyPrice) / buyPrice * 100).toFixed(0) : 0;
+    const p2 = buyPrice > 0 ? ((step2Target - buyPrice) / buyPrice * 100).toFixed(0) : 0;
+    const p3 = buyPrice > 0 ? ((step3Target - buyPrice) / buyPrice * 100).toFixed(0) : 0;
+
+    cond1 = `1차 상방 저항선 돌파 시 (+${p1}% 수익 확정 분할 매도)`;
+    cond2 = `2차 확장 저항선 도달 시 (+${p2}% 고수익 실현)`;
+    cond3 = `최종 목표가 도달 또는 RSI 75+ 과열 시 (+${p3}% 전량 청산)`;
+  } else {
+    // [Case B: 현재 주가가 저평가되어 적정가 도달을 기다리는 종목]
+    step1Target = Math.max(Math.round(baseVal), Math.round(currPrice * 1.06), Math.round(buyPrice * 1.05));
+    step2Target = Math.max(Math.round((baseVal + bullishVal) / 2), Math.round(step1Target * 1.08), Math.round(currPrice * 1.15));
+    step3Target = Math.max(Math.round(bullishVal), Math.round(step2Target * 1.10), Math.round(currPrice * 1.25));
+
+    cond1 = "다모다란 Base 적정가 터치 시 기계적 35% 분할 매도";
+    cond2 = "적정가 초과 상승 및 모멘텀 지속 시 35% 익절";
+    cond3 = "다모다란 Bullish Target 상단 + RSI 70+ 과열 시 전량 청산";
+  }
+
+  // 가격 라운딩 처리
+  if (currency === "KRW") {
+    step1Target = Math.round(step1Target / 100) * 100;
+    step2Target = Math.round(step2Target / 100) * 100;
+    step3Target = Math.round(step3Target / 100) * 100;
+  } else {
+    step1Target = Math.round(step1Target * 10) / 10;
+    step2Target = Math.round(step2Target * 10) / 10;
+    step3Target = Math.round(step3Target * 10) / 10;
+  }
 
   let s1 = 0, s2 = 0, s3 = 0;
   if (quantity <= 1) {
@@ -1244,21 +1338,21 @@ function jsEvaluateExitTiming(stock, dcf) {
       target_price: step1Target,
       ratio_pct: 35,
       shares: s1,
-      condition: "다모다란 Base 적정가 터치 시 기계적 매도"
+      condition: cond1
     },
     {
       step: "2단계 (2차 익절)",
       target_price: step2Target,
       ratio_pct: 35,
       shares: s2,
-      condition: "적정가 초과 상승 및 모멘텀 지속 시"
+      condition: cond2
     },
     {
       step: "3단계 (최종 익절)",
       target_price: step3Target,
       ratio_pct: 30,
       shares: s3,
-      condition: "다모다란 Bullish Target 상단 + RSI 70+ 과열 시"
+      condition: cond3
     }
   ];
 
@@ -3892,7 +3986,20 @@ async function fetchNaverStockPriceForModal() {
   const btn = document.getElementById("btn-naver-query");
 
   if (!tickerInput) return;
-  let query = (tickerInput.value || nameInput?.value || "").trim();
+  const nameVal = nameInput ? nameInput.value.trim() : "";
+  const tickerVal = tickerInput ? tickerInput.value.trim() : "";
+
+  // 1. 종목명과 티커 중 적절한 검색어 자동 판단 (이름과 티커 불일치 방지)
+  let query = tickerVal;
+  if (nameVal && (KOREAN_TICKER_MAP[nameVal] || STOCK_PRESETS[nameVal.toLowerCase()])) {
+    const mappedCode = KOREAN_TICKER_MAP[nameVal] || STOCK_PRESETS[nameVal.toLowerCase()]?.ticker;
+    if (mappedCode && mappedCode !== tickerVal) {
+      query = nameVal; // 종목명과 티커가 엇갈려 있으면 사용자 입력 종목명 우선 적용!
+    }
+  } else if (!query && nameVal) {
+    query = nameVal;
+  }
+
   if (!query) {
     alert("조회할 종목코드(6자리) 또는 종목명을 입력해주세요.");
     tickerInput.focus();
@@ -3916,9 +4023,7 @@ async function fetchNaverStockPriceForModal() {
       if (preset.growth) document.getElementById("form-growth").value = preset.growth;
       if (preset.margin) document.getElementById("form-margin").value = preset.margin;
       if (preset.rsi) document.getElementById("form-rsi").value = preset.rsi;
-      if (preset.notes && !document.getElementById("form-notes").value) {
-        document.getElementById("form-notes").value = preset.notes;
-      }
+      if (preset.notes) document.getElementById("form-notes").value = preset.notes;
       break;
     }
   }
@@ -3942,9 +4047,8 @@ async function fetchNaverStockPriceForModal() {
     if (res.ok) {
       const data = await res.json();
       if (data && data.success) {
-        if (nameInput && (!nameInput.value || nameInput.value === query || nameInput.value.length < 2)) {
-          nameInput.value = data.name;
-        }
+        if (nameInput) nameInput.value = data.name;
+        if (tickerInput) tickerInput.value = data.ticker;
         if (priceInput) priceInput.value = data.current_price;
         if (marketInput) marketInput.value = data.market || "KR";
         if (data.target_ebit_margin) {
