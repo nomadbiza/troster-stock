@@ -1068,7 +1068,7 @@ function jsCalculateDamodaranDcf(stock, rfOverride = null) {
   const wacc = (weightEquity * costOfEquity) + (weightDebt * costOfDebtAfterTax);
 
   let baseRev = inputs.base_revenue;
-  if (!baseRev || baseRev <= 0) {
+  if (!baseRev || baseRev <= 0 || (profile && (baseRev === 265000 || baseRev === 53000))) {
     baseRev = profile ? profile.base_revenue : (market === "KR" ? 50000 : 5000);
   }
 
@@ -1078,7 +1078,11 @@ function jsCalculateDamodaranDcf(stock, rfOverride = null) {
 
   const g5y = (inputs.growth_rate_next_5y !== undefined ? inputs.growth_rate_next_5y : (profile ? profile.growth_rate_next_5y : defaultGrowth)) / 100.0;
   const gTerm = Math.min((inputs.terminal_growth_rate || 2.5) / 100.0, rf / 100.0);
-  const targetMargin = (inputs.target_ebit_margin !== undefined ? inputs.target_ebit_margin : (profile ? profile.target_ebit_margin : defaultMargin)) / 100.0;
+  let targetMarginVal = inputs.target_ebit_margin;
+  if (targetMarginVal === undefined || (profile && (targetMarginVal === 18.5 || targetMarginVal === 32.0))) {
+    targetMarginVal = profile ? profile.target_ebit_margin : defaultMargin;
+  }
+  const targetMargin = targetMarginVal / 100.0;
   const salesToCap = inputs.sales_to_capital || (profile ? profile.sales_to_capital : defaultSalesToCap);
   const rdBoost = (((inputs.rd_annual_billion_krw !== undefined ? inputs.rd_annual_billion_krw : (profile ? profile.rd_annual_billion_krw : 0))) * 0.25);
 
@@ -1141,8 +1145,15 @@ function jsCalculateDamodaranDcf(stock, rfOverride = null) {
   let rawFairVal = market === "KR" ? (eqVal * 1000.0) / shares : eqVal / shares;
   if (rawFairVal <= 0 || isNaN(rawFairVal)) rawFairVal = stock.current_price || 1000;
 
-  // 애널리스트 컨센서스 목표가 추출 및 섹터 앙상블
-  const consensusTpNum = parsePriceNumber(stock.consensus_target_price || inputs.consensus_target_price || (profile ? profile.consensus_target_price : null));
+  // 애널리스트 컨센서스 목표가 추출 및 섹터 앙상블 (빈 값이나 '-' 문자열 방어)
+  let consensusTpNum = parsePriceNumber(stock.consensus_target_price);
+  if (consensusTpNum <= 0 && inputs.consensus_target_price) {
+    consensusTpNum = parsePriceNumber(inputs.consensus_target_price);
+  }
+  if (consensusTpNum <= 0 && profile && profile.consensus_target_price) {
+    consensusTpNum = parsePriceNumber(profile.consensus_target_price);
+  }
+
   let baseFairVal = rawFairVal;
   let conservativeVal = rawFairVal * 0.80;
   let bullishVal = rawFairVal * 1.28;
@@ -2190,6 +2201,21 @@ async function fetchPortfolio(rf = null, forceRefresh = false) {
   let totInvested = 0;
   let totCurrent = 0;
   const usdRate = (g_macroData && g_macroData.fx) ? (g_macroData.fx.find(f => f.pair === "USD/KRW")?.current || 1380.3) : 1380.3;
+
+  rawList.forEach(item => {
+    const prof = getProfileForStock(item.ticker) || getProfileForStock(item.name);
+    if (prof) {
+      if (!item.consensus_target_price || item.consensus_target_price === "-" || parsePriceNumber(item.consensus_target_price) <= 0) {
+        item.consensus_target_price = prof.consensus_target_price;
+      }
+      if (!item.consensus_opinion || item.consensus_opinion === "-") {
+        item.consensus_opinion = prof.consensus_opinion;
+      }
+      if (prof.sector && (!item.sector_id || item.sector_id === "general_manufacturing")) {
+        item.sector_id = prof.sector;
+      }
+    }
+  });
 
   g_portfolio = rawList.map(item => {
     const dcf = jsCalculateDamodaranDcf(item, rf);
